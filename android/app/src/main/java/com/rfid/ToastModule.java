@@ -64,29 +64,29 @@ public class ToastModule extends ReactContextBaseJavaModule {
     try
     {
       System.out.println("SReader");
-      SReader reader = SReader.create("sld://" + uriString);
+      SReader reader = SReader.create("sld:///dev/ttyS6");
 
       reader.Connect();
-
-      int[] antList = {4};
-      reader.setAntenna(antList);
-
-      int power = 30;
-      reader.setReaderPower(power);
-
-      ReaderListener listener = new PrintListener();
-      reader.addReadListener(listener);
-
-      int q= 4;
-      int session = 1;
-      Gen2.InventryValue value = new InventryValue(q, session);
-
-      reader.Inventry(value, null);
-
-      successCallback.invoke(value);
-
-
-      reader.ShutDown();
+//
+//      int[] antList = {4};
+//      reader.setAntenna(antList);
+//
+//      int power = 30;
+//      reader.setReaderPower(power);
+//
+//      ReaderListener listener = new PrintListener();
+//      reader.addReadListener(listener);
+//
+//      int q= 4;
+//      int session = 1;
+//      Gen2.InventryValue value = new InventryValue(q, session);
+//
+//      reader.Inventry(value, null);
+//
+      successCallback.invoke(uriString);
+//
+//
+//      reader.ShutDown();
     }
     catch (ReaderException e) {
       // TODO: handle exception
