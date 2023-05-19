@@ -76,7 +76,7 @@ public class ToastModule extends ReactContextBaseJavaModule {
      * 结束盘点
      */
     @ReactMethod
-    public void inventryStop() {
+    public void inventryStop() throws ReaderException {
         if (reader != null) {
             reader.Inventry_stop();
         }
@@ -101,7 +101,7 @@ public class ToastModule extends ReactContextBaseJavaModule {
             reader.addReadListener(listener);
 
             int q = 4;
-            int session = 1;
+            int session = 0;
             Gen2.InventryValue value = new InventryValue(q, session);
             reader.Inventry(value, null);
 
@@ -122,9 +122,9 @@ public class ToastModule extends ReactContextBaseJavaModule {
     /**
      * 读取EPC
      */
-    private String ReadSingleEPC() {
+    private String ReadSingleEPC() throws ReaderException {
         TagData tagData = reader.ReadSingleEPC();
-        return tagData.epcString()
+      return tagData.epcString();
     }
 
     static class PrintListener implements ReaderListener {

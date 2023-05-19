@@ -48,8 +48,10 @@ function App(): JSX.Element {
     // })
     ToastExample.create("/dev/ttyS6", (err: any) => {
       console.log(`error ===`, err)
+      setValue(err)
     }, (s: any) => {
       console.log("success ===", s)
+      setValue(s)
     })
   }
 
