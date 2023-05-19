@@ -46,7 +46,7 @@ function App(): JSX.Element {
     // }, (s: any) => {
     //   console.log("s===", s)
     // })
-    ToastExample.create("/dev/ttyS6", (err: any) => {
+    ToastExample.create("sld:///dev/ttyS6", (err: any) => {
       console.log(`error ===`, err)
       setValue(err)
     }, (s: any) => {
