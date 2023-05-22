@@ -1,7 +1,5 @@
 package com.rfid;
 
-import android.os.Build;
-import com.solid.ReaderException;
 import com.solid.SReader;
 import com.solid.*;
 
@@ -14,7 +12,7 @@ import java.util.function.Consumer;
  * @author zhaohaha
  * Created on 2023/05/19
  */
-public class RfidApplication {
+public class RFIDApplication {
 
     /**
      * SReader
@@ -29,10 +27,10 @@ public class RfidApplication {
     /**
      * 有参/无参构造
      */
-    public RfidApplication() {
+    public RFIDApplication() {
     }
 
-    public RfidApplication(String address) {
+    public RFIDApplication(String address) {
         this.address = address;
     }
 

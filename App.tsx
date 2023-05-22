@@ -17,6 +17,8 @@ import {
   View,
   Button,
   NativeModules,
+  // eslint-disable-next-line no-unused-vars,@typescript-eslint/no-unused-vars
+  StyleProp,
 } from "react-native"
 
 import {
@@ -38,20 +40,14 @@ function App(): JSX.Element {
   const [value, setValue] = useState(0)
 
   const testModule = () => {
-    const { ToastExample } = NativeModules || {}
+    const { RFID } = NativeModules || {}
     // console.log(`NativeModules===`, NativeModules)
-    // console.log(`ToastExample===`, ToastExample)
-    // ToastExample.show("666", ToastExample.SHORT, (err: any) => {
-    //   console.log(`err===`, err)
-    // }, (s: any) => {
-    //   console.log("s===", s)
-    // })
-    ToastExample.create("sld:///dev/ttyS6", (err: any) => {
-      console.log(`error ===`, err)
-      setValue(err)
-    }, (s: any) => {
+    RFID.create("sld:///dev/ttyS6", (s: any) => {
       console.log("success ===", s)
       setValue(s)
+    }, (err: any) => {
+      console.log(`error ===`, err)
+      setValue(err)
     })
   }
 
@@ -81,7 +77,7 @@ function App(): JSX.Element {
   )
 }
 
-const styles = StyleSheet.create({
+const styles:Record<string, StyleProp<any>> = StyleSheet.create({
   sectionContainer: {
     marginTop: 32,
     paddingHorizontal: 24,
