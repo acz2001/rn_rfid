@@ -1,5 +1,6 @@
 package com.rfid;
 
+import android.os.Build;
 import com.solid.SReader;
 import com.solid.*;
 
@@ -47,11 +48,12 @@ public class RFIDApplication {
         this.address = address;
         reader = SReader.create(address);
         // todo
-        //reader.setReaderPower(30);
         // 进行连接
         reader.Connect();
         if (callback != null) {
-            callback.accept(address);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                callback.accept(address);
+            }
         }
     }
 

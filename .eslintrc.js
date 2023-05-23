@@ -137,7 +137,7 @@ module.exports = {
     }], // 推荐使用 在对象、数组 '，'逗号后面加上空格
     "comma-style": ["error", "last"], // 要求声明的逗号在当前变量后
     "computed-property-spacing": 2, // 禁止在计算属性中使用空格
-    "eol-last": ["error", "always"], // 禁止文件末尾存在空行
+    "eol-last": ["off", "always"], // 禁止文件末尾存在空行
     "func-call-spacing": 2, // 禁止方法调用标识符()前有空格
     "function-paren-newline": ["error", "multiline-arguments"], // 强制在函数括号内使用一致的换行
     "implicit-arrow-linebreak": ["error", "beside"], // 强制隐式返回的箭头函数体的位置
@@ -175,7 +175,7 @@ module.exports = {
       anonymous: "always", // 匿名函数`function`关键字与`()`间要有空格
       asyncArrow: "always", // 异步箭头函数`async`关键字与`()`间要有空格
     }],
-    "object-curly-spacing": ["error", "always"], // 对象前后添加空格，如果是`{}`则不添加
+    "object-curly-spacing": ["off", "always"], // 对象前后添加空格，如果是`{}`则不添加
     "object-property-newline": ["error", { allowAllPropertiesOnSameLine: false }], // 属性换行
     // 属性个数超过3个换行
     // 'object-curly-newline': [

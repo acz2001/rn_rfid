@@ -5,8 +5,8 @@
  * @format
  */
 
-import React, { useState } from "react"
-import type { PropsWithChildren } from "react"
+import React, {useEffect, useState} from "react"
+import type {PropsWithChildren} from "react"
 import {
   SafeAreaView,
   ScrollView,
@@ -16,9 +16,10 @@ import {
   useColorScheme,
   View,
   Button,
+  AppState,
   NativeModules,
   // eslint-disable-next-line no-unused-vars,@typescript-eslint/no-unused-vars
-  StyleProp,
+  StyleProp, AppStateStatus,
 } from "react-native"
 
 import {
@@ -30,6 +31,8 @@ type SectionProps = PropsWithChildren<{
   title: string;
 }>;
 
+const {RFID: RFIDApplication} = NativeModules || {}
+
 function App(): JSX.Element {
   const isDarkMode = useColorScheme() === "dark"
 
@@ -38,16 +41,39 @@ function App(): JSX.Element {
   }
 
   const [value, setValue] = useState(0)
+  const [errorValue, setErrorValue] = useState(null)
 
-  const testModule = () => {
-    const { RFID } = NativeModules || {}
-    // console.log(`NativeModules===`, NativeModules)
-    RFID.create("sld:///dev/ttyS6", (s: any) => {
-      console.log("success ===", s)
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      console.log(`AppStateStatus:nextAppState ===`, nextAppState)
+      if (nextAppState === "inactive" || nextAppState === "background") {
+        // 应用退出或直接关闭的逻辑处理
+        // 在这里执行你想要的操作，例如保存数据或清理资源
+      }
+    }
+    AppState.addEventListener("change", handleAppStateChange)
+    return () => {
+      // AppState.removeEventListener("change", handleAppStateChange)
+    }
+  }, [])
+
+  const testCreate = () => {
+    console.log(`RFIDApplication===`, RFIDApplication)
+    RFIDApplication.create("sld:///dev/ttyS6", (s: any) => {
+      console.log("create:success ===", s)
       setValue(s)
     }, (err: any) => {
-      console.log(`error ===`, err)
-      setValue(err)
+      console.log(`create:error ===`, err)
+      setErrorValue(err)
+    })
+  }
+
+  const testShutdown = () => {
+    RFIDApplication.shutdown("断开连接", (s: boolean) => {
+      console.log(`shutdown:success === `, s)
+    }, (err: any) => {
+      console.log(`shutdown:error ===`, err)
+      setErrorValue(err)
     })
   }
 
@@ -60,16 +86,27 @@ function App(): JSX.Element {
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         style={backgroundStyle}>
-        <Header />
+        <Header/>
         <View
           style={{
             backgroundColor: isDarkMode ? Colors.black : Colors.white,
           }}>
-          <View style={styles.btn}>
-            <Button title="测试" onPress={testModule} />
+          <View style={styles.btnBox}>
+            <View style={styles.btn}>
+              <Button title="测试连接" onPress={testCreate}/>
+            </View>
+            <View style={styles.btn1}>
+              <Button title="测试关闭" onPress={testShutdown}/>
+            </View>
           </View>
           <View>
-            <Text>读取值：{value}</Text>
+            <Text>当前串口号：sld:///dev/ttyS6</Text>
+          </View>
+          <View>
+            <Text>错误信息：{errorValue}</Text>
+          </View>
+          <View>
+            <Text>当前连接串口：{value}</Text>
           </View>
         </View>
       </ScrollView>
@@ -77,7 +114,7 @@ function App(): JSX.Element {
   )
 }
 
-const styles:Record<string, StyleProp<any>> = StyleSheet.create({
+const styles = StyleSheet.create({
   sectionContainer: {
     marginTop: 32,
     paddingHorizontal: 24,
@@ -94,9 +131,18 @@ const styles:Record<string, StyleProp<any>> = StyleSheet.create({
   highlight: {
     fontWeight: "700",
   },
+  btnBox: {
+    flexDirection: "row",
+    justifyContent: "flex-start",
+  },
   btn: {
     width: 100,
     textAlign: "center",
+  },
+  btn1: {
+    width: 100,
+    textAlign: "center",
+    marginLeft: 10,
   },
 })
 
