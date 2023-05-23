@@ -53,9 +53,6 @@ public class RFIDApplication {
         // 进行连接
         reader.Connect();
 
-        // 添加事件监听器
-        reader.addReadListener(new PrintListener());
-
         if (callback != null) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 callback.accept(address);
@@ -92,8 +89,6 @@ public class RFIDApplication {
     }
 
     class PrintListener implements ReaderListener {
-        HashSet<String> seenTags = new HashSet<String>();
-        int total = 1;
 
         @Override
         public void ReaderGPIO(Gpio_Info gpio_info) {
@@ -109,6 +104,7 @@ public class RFIDApplication {
 
         @Override
         public void TagReadData(TagData t) {
+
             WritableMap params = new WritableNativeMap();
             params.putInt("ant", t.getAnt());
             params.putInt("num", t.getNum());
@@ -128,6 +124,30 @@ public class RFIDApplication {
             }
         }
 
+    }
+
+    private volatile boolean readStop;
+
+    private final ReaderListener readerListener = new PrintListener();
+
+    public void startRead() {
+        new Thread(() -> {
+
+            // 添加事件监听器
+            reader.addReadListener(readerListener);
+
+            Gen2.InventryValue value = new Gen2.InventryValue(6, 0);
+
+            try {
+                reader.Inventry(value, null);
+            } catch (Exception e) {
+                System.err.println("error:" + e.getMessage());
+            }
+        }).start();
+    }
+
+    public void stopRead() {
+        reader.removeReadListener(readerListener);
     }
 
 }

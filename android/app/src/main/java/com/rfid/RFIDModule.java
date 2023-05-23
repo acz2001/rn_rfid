@@ -53,7 +53,8 @@ public class RFIDModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void getReaderInfo(Callback successCallback, Callback errorCallback) {
         try {
-            ReaderInfo readerInfo = application.getReaderInfo();;
+            ReaderInfo readerInfo = application.getReaderInfo();
+            ;
             WritableMap writableMap = new WritableNativeMap();
             writableMap.putInt("versionH", readerInfo.getVersionH());
             writableMap.putInt("versionL", readerInfo.getVersionL());
@@ -75,6 +76,7 @@ public class RFIDModule extends ReactContextBaseJavaModule {
     public void addListener(String eventName) {
         // Set up any upstream listeners or background tasks as necessary
     }
+
     @ReactMethod
     public void removeListeners(Integer count) {
         // Remove upstream listeners, stop unnecessary background tasks
@@ -85,6 +87,34 @@ public class RFIDModule extends ReactContextBaseJavaModule {
         DeviceEventManagerModule.RCTDeviceEventEmitter emitter = reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class);
         if (emitter != null) {
             emitter.emit("tagReadData", "test");
+        }
+    }
+
+    @ReactMethod
+    public void startRead(Callback successCallback, Callback errorCallback) {
+        try {
+            application.startRead();
+            if (successCallback != null) {
+                successCallback.invoke("start read success");
+            }
+        } catch (Exception e) {
+            if (errorCallback != null) {
+                errorCallback.invoke(e.getMessage());
+            }
+        }
+    }
+
+    @ReactMethod
+    public void stopRead(Callback successCallback, Callback errorCallback) {
+        try {
+            application.stopRead();
+            if (successCallback != null) {
+                successCallback.invoke("stop read success");
+            }
+        } catch (Exception e) {
+            if (errorCallback != null) {
+                errorCallback.invoke(e.getMessage());
+            }
         }
     }
 
