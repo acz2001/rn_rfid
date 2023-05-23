@@ -8,11 +8,12 @@ public class RFIDModule extends ReactContextBaseJavaModule {
 
     private static ReactApplicationContext reactContext;
 
-    RFIDApplication application = new RFIDApplication();
+    RFIDApplication application;
 
     public RFIDModule(ReactApplicationContext context) {
         super(context);
         reactContext = context;
+        this.application = new RFIDApplication(context);
     }
 
     @Override
