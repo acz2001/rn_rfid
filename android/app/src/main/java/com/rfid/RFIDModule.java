@@ -1,13 +1,8 @@
 package com.rfid;
 
-import com.facebook.react.bridge.Callback;
-import com.facebook.react.bridge.ReactApplicationContext;
-import com.facebook.react.bridge.ReactContextBaseJavaModule;
-import com.facebook.react.bridge.ReactMethod;
-
-import org.jetbrains.annotations.NotNull;
-
+import com.facebook.react.bridge.*;
 import com.solid.ReaderException;
+import com.solid.ReaderInfo;
 
 public class RFIDModule extends ReactContextBaseJavaModule {
 
@@ -20,7 +15,6 @@ public class RFIDModule extends ReactContextBaseJavaModule {
         reactContext = context;
     }
 
-    @NotNull
     @Override
     public String getName() {
         return "RFID";
@@ -49,6 +43,27 @@ public class RFIDModule extends ReactContextBaseJavaModule {
         try {
             application.shutdown();
             successCallback.invoke(false);
+        } catch (Exception e) {
+            errorCallback.invoke(e.getMessage());
+        }
+    }
+
+    @ReactMethod
+    public void getReaderInfo(Callback successCallback, Callback errorCallback) {
+        try {
+            ReaderInfo readerInfo = application.getReaderInfo();;
+            WritableMap writableMap = new WritableNativeMap();
+            writableMap.putInt("versionH", readerInfo.getVersionH());
+            writableMap.putInt("versionL", readerInfo.getVersionL());
+            writableMap.putInt("type", readerInfo.Type());
+            writableMap.putInt("power", readerInfo.getPower());
+            writableMap.putInt("scanTime", readerInfo.getScanTime());
+            writableMap.putInt("checkAnt", readerInfo.getCheckAnt());
+            writableMap.putInt("ant", readerInfo.getAnt());
+            writableMap.putInt("AntH", readerInfo.getAntH());
+            writableMap.putInt("maxFre", readerInfo.getmaxFre());
+            writableMap.putInt("minFre", readerInfo.getminFre());
+            successCallback.invoke(writableMap);
         } catch (Exception e) {
             errorCallback.invoke(e.getMessage());
         }

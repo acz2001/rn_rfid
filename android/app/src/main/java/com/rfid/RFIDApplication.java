@@ -1,8 +1,9 @@
 package com.rfid;
 
 import android.os.Build;
+import com.solid.ReaderException;
+import com.solid.ReaderInfo;
 import com.solid.SReader;
-import com.solid.*;
 
 import java.util.function.Consumer;
 
@@ -57,17 +58,12 @@ public class RFIDApplication {
         }
     }
 
-    public void getReaderInfo()
-    {
-        if(reader != null)
-        {
-            try {
-                ReaderInfo info = reader.getReaderInfo();
-                System.out.println("===========================================" + info.getPower());
-            } catch (Exception e) {
-                System.out.println("===========================================" + e);
-            }
+    public ReaderInfo getReaderInfo() throws ReaderException {
+        if (reader != null) {
+            return reader.getReaderInfo();
         }
+
+        return null;
     }
 
     public void connect(String address) throws Exception {
