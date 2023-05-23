@@ -5,7 +5,6 @@ import com.facebook.react.bridge.*;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.solid.*;
 
-import java.util.HashSet;
 import java.util.function.Consumer;
 
 /**
@@ -88,7 +87,7 @@ public class RFIDApplication {
         this.address = address;
     }
 
-    class PrintListener implements ReaderListener {
+    private final ReaderListener readerListener = new ReaderListener() {
 
         @Override
         public void ReaderGPIO(Gpio_Info gpio_info) {
@@ -104,6 +103,7 @@ public class RFIDApplication {
 
         @Override
         public void TagReadData(TagData t) {
+            System.out.println("TagReadData: " + t.epcString());
 
             WritableMap params = new WritableNativeMap();
             params.putInt("ant", t.getAnt());
@@ -124,13 +124,12 @@ public class RFIDApplication {
             }
         }
 
-    }
+    };
 
     private volatile boolean readStop;
 
-    private final ReaderListener readerListener = new PrintListener();
-
     public void startRead() {
+        readStop = false;
         new Thread(() -> {
 
             // 添加事件监听器
@@ -138,16 +137,24 @@ public class RFIDApplication {
 
             Gen2.InventryValue value = new Gen2.InventryValue(6, 0);
 
-            try {
-                reader.Inventry(value, null);
-            } catch (Exception e) {
-                System.err.println("error:" + e.getMessage());
+            while (!readStop) {
+                try {
+                    reader.Inventry(value, null);
+                } catch (Exception e) {
+                    System.err.println("error:" + e.getMessage());
+                }
             }
         }).start();
     }
 
     public void stopRead() {
+        readStop = true;
         reader.removeReadListener(readerListener);
+        try {
+            reader.Inventry_stop();
+        } catch (Exception e) {
+            System.err.println("error:" + e.getMessage());
+        }
     }
 
 }
