@@ -49,17 +49,19 @@ public class RFIDApplication {
         this.address = address;
         reader = SReader.create(address);
 
-        // 添加事件监听器
-        reader.addReadListener(new PrintListener());
-
         // todo
         // 进行连接
         reader.Connect();
+
+        // 添加事件监听器
+        reader.addReadListener(new PrintListener());
+
         if (callback != null) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 callback.accept(address);
             }
         }
+
     }
 
     public ReaderInfo getReaderInfo() throws ReaderException {

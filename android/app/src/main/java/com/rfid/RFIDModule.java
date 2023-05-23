@@ -1,6 +1,7 @@
 package com.rfid;
 
 import com.facebook.react.bridge.*;
+import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.solid.ReaderException;
 import com.solid.ReaderInfo;
 
@@ -65,6 +66,23 @@ public class RFIDModule extends ReactContextBaseJavaModule {
             successCallback.invoke(writableMap);
         } catch (Exception e) {
             errorCallback.invoke(e.getMessage());
+        }
+    }
+
+    @ReactMethod
+    public void addListener(String eventName) {
+        // Set up any upstream listeners or background tasks as necessary
+    }
+    @ReactMethod
+    public void removeListeners(Integer count) {
+        // Remove upstream listeners, stop unnecessary background tasks
+    }
+
+    @ReactMethod
+    public void testEmit() {
+        DeviceEventManagerModule.RCTDeviceEventEmitter emitter = reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class);
+        if (emitter != null) {
+            emitter.emit("tagReadData", "test");
         }
     }
 
