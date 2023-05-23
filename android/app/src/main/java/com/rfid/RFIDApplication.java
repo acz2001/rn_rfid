@@ -1,10 +1,11 @@
 package com.rfid;
 
 import android.os.Build;
-import com.solid.ReaderException;
-import com.solid.ReaderInfo;
-import com.solid.SReader;
+import com.facebook.react.bridge.*;
+import com.facebook.react.modules.core.DeviceEventManagerModule;
+import com.solid.*;
 
+import java.util.HashSet;
 import java.util.function.Consumer;
 
 /**
@@ -26,14 +27,13 @@ public class RFIDApplication {
      */
     private String address;
 
+    private ReactContext reactContext;
+
     /**
      * 有参/无参构造
      */
-    public RFIDApplication() {
-    }
-
-    public RFIDApplication(String address) {
-        this.address = address;
+    public RFIDApplication(ReactContext reactContext) {
+        this.reactContext = reactContext;
     }
 
     /**
@@ -48,6 +48,10 @@ public class RFIDApplication {
         System.out.println(address);
         this.address = address;
         reader = SReader.create(address);
+
+        // 添加事件监听器
+        reader.addReadListener(new PrintListener());
+
         // todo
         // 进行连接
         reader.Connect();
@@ -84,4 +88,44 @@ public class RFIDApplication {
     public void setAddress(String address) {
         this.address = address;
     }
+
+    class PrintListener implements ReaderListener {
+        HashSet<String> seenTags = new HashSet<String>();
+        int total = 1;
+
+        @Override
+        public void ReaderGPIO(Gpio_Info gpio_info) {
+            // TODO Auto-generated method stub
+            System.out.println("Id:" + gpio_info.getID() + "  High:" + gpio_info.getHigh());
+        }
+
+        @Override
+        public void ReaderException(Exception e) {
+            // TODO Auto-generated method stub
+            System.out.println("ee ReaderException: " + e.getMessage());
+        }
+
+        @Override
+        public void TagReadData(TagData t) {
+            WritableMap params = new WritableNativeMap();
+            params.putInt("ant", t.getAnt());
+            params.putInt("num", t.getNum());
+            params.putInt("rssi", t.getRssi());
+            params.putString("epc", t.epcString());
+            if (t.getData() != null) {
+                WritableArray array = new WritableNativeArray();
+                for (byte b : t.getData()) {
+                    array.pushInt(b);
+                }
+                params.putArray("data", array);
+            }
+
+            DeviceEventManagerModule.RCTDeviceEventEmitter emitter = reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class);
+            if (emitter != null) {
+                emitter.emit("tagReadData", params);
+            }
+        }
+
+    }
+
 }
