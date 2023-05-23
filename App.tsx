@@ -17,7 +17,7 @@ import {
   AppState,
   NativeModules,
   // eslint-disable-next-line no-unused-vars,@typescript-eslint/no-unused-vars
-  AppStateStatus,
+  AppStateStatus, NativeEventEmitter,
 } from "react-native"
 
 import {
@@ -42,6 +42,14 @@ function App(): JSX.Element {
       }
     }
     AppState.addEventListener("change", handleAppStateChange)
+
+    const eventEmitter: NativeEventEmitter = new NativeEventEmitter(RFIDApplication)
+    eventEmitter.addListener("tagReadData", (event: any) => {
+      console.log(`tagReadData===`, event)
+    })
+    return () => {
+      eventEmitter.removeAllListeners("tagReadData")
+    }
   }, [])
 
   const testCreate = () => {
@@ -67,11 +75,30 @@ function App(): JSX.Element {
   }
 
   const getReaderInfo = () => {
+    // RFIDApplication.testEmit()
     RFIDApplication.getReaderInfo((info: any) => {
       console.log(`getReaderInfo:success === `, info)
       setReaderInfo(JSON.stringify(info))
     }, (err: any) => {
       console.log(`getReaderInfo:error ===`, err)
+      setError(err)
+    })
+  }
+
+  const testStartRead = () => {
+    RFIDApplication.startRead((msg: any) => {
+      console.log(`startRead:success === `, msg)
+    }, (err: any) => {
+      console.log(`startRead:error ===`, err)
+      setError(err)
+    })
+  }
+
+  const testStopRead = () => {
+    RFIDApplication.startRead((msg: any) => {
+      console.log(`stopRead:success === `, msg)
+    }, (err: any) => {
+      console.log(`stopRead:error ===`, err)
       setError(err)
     })
   }
@@ -92,6 +119,12 @@ function App(): JSX.Element {
             </View>
             <View style={styles.btn1}>
               <Button disabled={!open} title="获取设备信息" onPress={getReaderInfo}/>
+            </View>
+            <View style={styles.btn1}>
+              <Button disabled={!open} title="盘点" onPress={testStartRead}/>
+            </View>
+            <View style={styles.btn1}>
+              <Button disabled={!open} title="断开" onPress={testStopRead}/>
             </View>
           </View>
           <View>
