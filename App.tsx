@@ -6,20 +6,18 @@
  */
 
 import React, {useEffect, useState} from "react"
-import type {PropsWithChildren} from "react"
 import {
   SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
   Button,
   AppState,
   NativeModules,
   // eslint-disable-next-line no-unused-vars,@typescript-eslint/no-unused-vars
-  StyleProp, AppStateStatus,
+  AppStateStatus,
 } from "react-native"
 
 import {
@@ -27,21 +25,13 @@ import {
   Header,
 } from "react-native/Libraries/NewAppScreen"
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
-
 const {RFID: RFIDApplication} = NativeModules || {}
 
 function App(): JSX.Element {
-  const isDarkMode = useColorScheme() === "dark"
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  }
-
-  const [value, setValue] = useState(0)
-  const [errorValue, setErrorValue] = useState(null)
+  const [open, setOpen] = useState<boolean>(false)
+  const [errorValue, setError] = useState(null)
+  const [readerInfo, setReaderInfo] = useState<string>("")
 
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
@@ -52,61 +42,65 @@ function App(): JSX.Element {
       }
     }
     AppState.addEventListener("change", handleAppStateChange)
-    return () => {
-      // AppState.removeEventListener("change", handleAppStateChange)
-    }
   }, [])
 
   const testCreate = () => {
     console.log(`RFIDApplication===`, RFIDApplication)
-    RFIDApplication.create("sld:///dev/ttyS6", (s: any) => {
+    RFIDApplication.create("sld:///dev/ttyS6", (s: boolean) => {
       console.log("create:success ===", s)
-      setValue(s)
+      setOpen(s)
     }, (err: any) => {
       console.log(`create:error ===`, err)
-      setErrorValue(err)
+      setError(err)
     })
   }
 
   const testShutdown = () => {
-    RFIDApplication.shutdown("断开连接", (s: boolean) => {
+    RFIDApplication.shutdown((s: boolean) => {
       console.log(`shutdown:success === `, s)
+      setOpen(s)
+      setReaderInfo("")
     }, (err: any) => {
       console.log(`shutdown:error ===`, err)
-      setErrorValue(err)
+      setError(err)
+    })
+  }
+
+  const getReaderInfo = () => {
+    RFIDApplication.getReaderInfo((info: any) => {
+      console.log(`getReaderInfo:success === `, info)
+      setReaderInfo(JSON.stringify(info))
+    }, (err: any) => {
+      console.log(`getReaderInfo:error ===`, err)
+      setError(err)
     })
   }
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? "light-content" : "dark-content"}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
+    <SafeAreaView>
+      <StatusBar/>
       <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
+        contentInsetAdjustmentBehavior="automatic">
         <Header/>
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
+        <View style={{backgroundColor: Colors.white}}>
           <View style={styles.btnBox}>
             <View style={styles.btn}>
-              <Button title="测试连接" onPress={testCreate}/>
+              <Button disabled={open} title="测试连接" onPress={testCreate}/>
             </View>
             <View style={styles.btn1}>
-              <Button title="测试关闭" onPress={testShutdown}/>
+              <Button disabled={!open} title="测试关闭" onPress={testShutdown}/>
+            </View>
+            <View style={styles.btn1}>
+              <Button disabled={!open} title="获取设备信息" onPress={getReaderInfo}/>
             </View>
           </View>
           <View>
-            <Text>当前串口号：sld:///dev/ttyS6</Text>
+            <Text>串口号：sld:///dev/ttyS6</Text>
+            <Text>当前连接状态：{open ? "已连接" : "未连接"}</Text>
+            <Text>设备信息：{readerInfo}</Text>
           </View>
           <View>
             <Text>错误信息：{errorValue}</Text>
-          </View>
-          <View>
-            <Text>当前连接串口：{value}</Text>
           </View>
         </View>
       </ScrollView>

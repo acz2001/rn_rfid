@@ -23,10 +23,8 @@ public class RFIDModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void create(String uriString, Callback successCallback, Callback errorCallback) {
         try {
-            application.connect(uriString, (s) -> {
-                successCallback.invoke(s);
-            });
-            application.getReaderInfo();
+            application.connect(uriString);
+            successCallback.invoke(true);
         } catch (ReaderException e) {
             // TODO: handle exception
             System.out.println("ReaderException:" + e.getMessage());
