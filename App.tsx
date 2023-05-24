@@ -9,7 +9,6 @@ import React, {useEffect, useState} from "react"
 import {
   SafeAreaView,
   ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
   View,
@@ -20,96 +19,97 @@ import {
   AppStateStatus, NativeEventEmitter,
 } from "react-native"
 
-import {
-  Colors,
-  Header,
-} from "react-native/Libraries/NewAppScreen"
+import {Colors} from "react-native/Libraries/NewAppScreen"
 
 const {RFID: RFIDApplication} = NativeModules || {}
+
 
 function App(): JSX.Element {
 
   const [open, setOpen] = useState<boolean>(false)
+  const [isRead, setRead] = useState<boolean>(false)
   const [errorValue, setError] = useState(null)
   const [readerInfo, setReaderInfo] = useState<string>("")
+  const [tagInfo, setTagInfo] = useState<any>()
 
   useEffect(() => {
-    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+    const handleAppStateChange = (nextAppState: AppStateStatus): void => {
       console.log(`AppStateStatus:nextAppState ===`, nextAppState)
-      if (nextAppState === "inactive" || nextAppState === "background") {
-        // 应用退出或直接关闭的逻辑处理
-        // 在这里执行你想要的操作，例如保存数据或清理资源
-      }
+      // active 处于窗口
+      // background 返回或退出
     }
     AppState.addEventListener("change", handleAppStateChange)
-
     const eventEmitter: NativeEventEmitter = new NativeEventEmitter(RFIDApplication)
-    eventEmitter.addListener("tagReadData", (event: any) => {
+    eventEmitter.addListener("tagReadData", (event: any): void => {
       console.log(`tagReadData===`, event)
+      setTagInfo(event)
     })
-    return () => {
+    return (): void => {
       eventEmitter.removeAllListeners("tagReadData")
     }
   }, [])
 
-  const testCreate = () => {
+  const testCreate = (): void => {
     console.log(`RFIDApplication===`, RFIDApplication)
-    RFIDApplication.create("sld:///dev/ttyS6", (s: boolean) => {
+    RFIDApplication.create("sld:///dev/ttyS6", (s: boolean): void => {
       console.log("create:success ===", s)
       setOpen(s)
-    }, (err: any) => {
-      console.log(`create:error ===`, err)
+    }, (err: any): void => {
+      console.error(`create:error ===`, err)
       setError(err)
     })
   }
 
-  const testShutdown = () => {
-    RFIDApplication.shutdown((s: boolean) => {
+  const testShutdown = (): void => {
+    RFIDApplication.shutdown((s: boolean): void => {
       console.log(`shutdown:success === `, s)
       setOpen(s)
       setReaderInfo("")
-    }, (err: any) => {
-      console.log(`shutdown:error ===`, err)
+    }, (err: any): void => {
+      console.error(`shutdown:error ===`, err)
       setError(err)
     })
   }
 
-  const getReaderInfo = () => {
+  const getReaderInfo = (): void => {
     // RFIDApplication.testEmit()
-    RFIDApplication.getReaderInfo((info: any) => {
+    RFIDApplication.getReaderInfo((info: any): void => {
       console.log(`getReaderInfo:success === `, info)
       setReaderInfo(JSON.stringify(info))
-    }, (err: any) => {
-      console.log(`getReaderInfo:error ===`, err)
+    }, (err: any): void => {
+      console.error(`getReaderInfo:error ===`, err)
       setError(err)
     })
   }
 
-  const testStartRead = () => {
-    RFIDApplication.startRead((msg: any) => {
+  const testStartRead = (): void => {
+    RFIDApplication.startRead((msg: any): void => {
       console.log(`startRead:success === `, msg)
-    }, (err: any) => {
-      console.log(`startRead:error ===`, err)
+      setRead(true)
+    }, (err: any): void => {
+      console.error(`startRead:error ===`, err)
       setError(err)
     })
   }
 
-  const testStopRead = () => {
-    RFIDApplication.startRead((msg: any) => {
+  const testStopRead = (): void => {
+    RFIDApplication.stopRead((msg: any): void => {
       console.log(`stopRead:success === `, msg)
-    }, (err: any) => {
-      console.log(`stopRead:error ===`, err)
+      setRead(false)
+    }, (err: any): void => {
+      console.error(`stopRead:error ===`, err)
       setError(err)
     })
   }
 
   return (
     <SafeAreaView>
-      <StatusBar/>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic">
-        <Header/>
-        <View style={{backgroundColor: Colors.white}}>
+        <View style={{
+          backgroundColor: Colors.white,
+          marginTop: 60,
+        }}>
           <View style={styles.btnBox}>
             <View style={styles.btn}>
               <Button disabled={open} title="测试连接" onPress={testCreate}/>
@@ -121,7 +121,7 @@ function App(): JSX.Element {
               <Button disabled={!open} title="获取设备信息" onPress={getReaderInfo}/>
             </View>
             <View style={styles.btn1}>
-              <Button disabled={!open} title="盘点" onPress={testStartRead}/>
+              <Button disabled={isRead || !open} title="盘点" onPress={testStartRead}/>
             </View>
             <View style={styles.btn1}>
               <Button disabled={!open} title="断开" onPress={testStopRead}/>
@@ -131,9 +131,8 @@ function App(): JSX.Element {
             <Text>串口号：sld:///dev/ttyS6</Text>
             <Text>当前连接状态：{open ? "已连接" : "未连接"}</Text>
             <Text>设备信息：{readerInfo}</Text>
-          </View>
-          <View>
             <Text>错误信息：{errorValue}</Text>
+            <Text>标签信息：{JSON.stringify(tagInfo)}</Text>
           </View>
         </View>
       </ScrollView>

@@ -52,7 +52,6 @@ public class RFIDModule extends ReactContextBaseJavaModule {
     public void getReaderInfo(Callback successCallback, Callback errorCallback) {
         try {
             ReaderInfo readerInfo = application.getReaderInfo();
-            ;
             WritableMap writableMap = new WritableNativeMap();
             writableMap.putInt("versionH", readerInfo.getVersionH());
             writableMap.putInt("versionL", readerInfo.getVersionL());

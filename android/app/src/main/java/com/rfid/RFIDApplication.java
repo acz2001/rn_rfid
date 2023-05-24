@@ -1,11 +1,8 @@
 package com.rfid;
 
-import android.os.Build;
 import com.facebook.react.bridge.*;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.solid.*;
-
-import java.util.function.Consumer;
 
 /**
  * RFID应用程序
@@ -38,7 +35,7 @@ public class RFIDApplication {
     /**
      * 连接
      */
-    public void connect(String address, Consumer<String> callback) throws Exception {
+    public void connect(String address) throws Exception {
         if (reader != null) {
             // 关闭连接
             reader.ShutDown();
@@ -51,13 +48,6 @@ public class RFIDApplication {
         // todo
         // 进行连接
         reader.Connect();
-
-        if (callback != null) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                callback.accept(address);
-            }
-        }
-
     }
 
     public ReaderInfo getReaderInfo() throws ReaderException {
@@ -66,10 +56,6 @@ public class RFIDApplication {
         }
 
         return null;
-    }
-
-    public void connect(String address) throws Exception {
-        this.connect(address, null);
     }
 
     public void shutdown() {
@@ -103,12 +89,9 @@ public class RFIDApplication {
 
         @Override
         public void TagReadData(TagData t) {
-            System.out.println("TagReadData: " + t.epcString());
-
             WritableMap params = new WritableNativeMap();
             params.putInt("ant", t.getAnt());
             params.putInt("num", t.getNum());
-            params.putInt("rssi", t.getRssi());
             params.putString("epc", t.epcString());
             if (t.getData() != null) {
                 WritableArray array = new WritableNativeArray();
@@ -135,7 +118,7 @@ public class RFIDApplication {
             // 添加事件监听器
             reader.addReadListener(readerListener);
 
-            Gen2.InventryValue value = new Gen2.InventryValue(6, 0);
+            Gen2.InventryValue value = new Gen2.InventryValue(4, 0);
 
             while (!readStop) {
                 try {
@@ -152,6 +135,7 @@ public class RFIDApplication {
         reader.removeReadListener(readerListener);
         try {
             reader.Inventry_stop();
+            reader.removeReadListener(readerListener);
         } catch (Exception e) {
             System.err.println("error:" + e.getMessage());
         }
