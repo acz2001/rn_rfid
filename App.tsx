@@ -24,7 +24,7 @@ import {Colors} from "react-native/Libraries/NewAppScreen"
 const {RFID: RFIDApplication} = NativeModules || {}
 
 
-function App(): JSX.Element {
+function App(): React.ReactElement {
 
   const [open, setOpen] = useState<boolean>(false)
   const [isRead, setRead] = useState<boolean>(false)

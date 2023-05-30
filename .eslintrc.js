@@ -6,6 +6,10 @@ module.exports = {
   settings: {
     react: { version: "detect" },
     "import/ignore": ["node_modules"],
+    "import/resolver": {
+      "babel-plugin-module-resolver": {},
+      "babel-module": {},
+    },
   },
   globals: { module: true },
   plugins: ["react", "react-native", "react-hooks"],
@@ -72,7 +76,7 @@ module.exports = {
     "no-implicit-globals": "warn", // 禁止在全局范围使用变量和函数声明
     "no-implied-eval": "warn", // 禁用隐式的eval()
     "no-lone-blocks": "warn", // 禁用不必要的嵌套块
-    "no-magic-numbers": ["warn", { ignoreArrayIndexes: true }], // 禁止使用魔术数字
+    // "no-magic-numbers": ["warn", { ignoreArrayIndexes: true }], // 禁止使用魔术数字
     "no-multi-spaces": "warn", // 禁止出现多个空格
     "no-new-wrappers": "error", // 禁止对 String，Number 和 Boolean 使用 new 操作符
     "no-new-func": "error", // 禁止对 Function 对象使用 new 操作符
