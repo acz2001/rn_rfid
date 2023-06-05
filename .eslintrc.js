@@ -20,8 +20,8 @@ module.exports = {
     // "prettier/prettier": "warn",
     "prettier/prettier": 0,
 
-    "no-console": process.env.NODE_ENV === "production" ? "warn" : "off",
-    "no-debugger": process.env.NODE_ENV === "production" ? "warn" : "off",
+    // "no-console": process.env.NODE_ENV === "production" ? "warn" : "off",
+    // "no-debugger": process.env.NODE_ENV === "production" ? "warn" : "off",
 
     /**
      * js import相关
@@ -193,10 +193,10 @@ module.exports = {
     // ],
     "arrow-spacing": "error", // 箭头函数在 => before/after都需要空格
     "space-infix-ops": "error", // 推荐缀操作符周围有空格
-    "spaced-comment": "off", // 要求在注释前有空白
+    "spaced-comment": "error", // 要求在注释前有空白
     "arrow-parens": ["error", "as-needed"],
     "linebreak-style": ["error", "unix"], // 强制使用一致的换行符风格
-    // 'lines-around-comment': ['error', { beforeBlockComment: true }], // 强制注释周围有空行
+    // "lines-around-comment": ["error", { beforeBlockComment: true }], // 强制注释周围有空行
     // 'max-len': [
     //     'warn',
     //     {
@@ -214,10 +214,11 @@ module.exports = {
     "react/no-string-refs": 1, // Using this.refs is deprecated
     "react/display-name": "off",
     "react/prop-types": "off",
-    "no-unused-vars": [2, {
+    "no-unused-vars": [0, {
       vars: "all",
       args: "none",
     }], // 禁止未使用过的变量,此规则旨在消除未使用的变量、函数和函数参数
+    "@typescript-eslint/no-unused-vars": ["off"],
     // "sort-imports": "off", // 该规则检查所有的 import 声明，验证所有的 import 都是首先按照使用的成员语法排序，其次是按照第一个成员或别名的字母顺序排序。
     "sort-keys": "off", // 'react/sort-comp': 1, // 强制组件方法顺序
     "react/jsx-key": "error", // 在数组或迭代器中验证JSX具有key属性
@@ -277,6 +278,7 @@ module.exports = {
       logical: "ignore",
       prop: "ignore",
     }], // 防止多行 JSX 周围缺少括号（可修复）
+    "react-hooks/exhaustive-deps": "off", // 无必要观察依赖项
     "react/jsx-props-no-multi-spaces": 1, // 禁止内联 JSX 属性之间有多个空格（可修复）
     "react/jsx-one-expression-per-line": 0, // 在 JSX 中限制每行一个表达式
     "react/jsx-handler-names": 0, // 在 JSX 中强制执行事件处理程序命名约定
