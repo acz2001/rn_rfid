@@ -3,6 +3,9 @@ package com.rfid;
 import com.facebook.react.bridge.*;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.solid.*;
+import kotlin.text.UStringsKt;
+
+import java.util.Objects;
 
 /**
  * RFID应用程序
@@ -17,6 +20,8 @@ public class RFIDApplication {
      * SReader
      */
     private SReader reader = null;
+
+    private String currentEpc;
 
     /**
      * 连接地址 tcp/ip 或者 串口地址
@@ -36,16 +41,12 @@ public class RFIDApplication {
      * 连接
      */
     public void connect(String address) throws Exception {
-        if (reader != null) {
-            // 关闭连接
-            reader.ShutDown();
-            reader = null;
-        }
-        System.out.println(address);
+       this.shutdown();
         this.address = address;
         reader = SReader.create(address);
 
         // todo
+        this.currentEpc = null;
         // 进行连接
         reader.Connect();
     }
@@ -62,6 +63,7 @@ public class RFIDApplication {
         if (reader != null) {
             reader.ShutDown();
             reader = null;
+            this.currentEpc = null;
         }
     }
 
@@ -89,10 +91,15 @@ public class RFIDApplication {
 
         @Override
         public void TagReadData(TagData t) {
+            final String epc = t.epcString();
+            if (Objects.equals(epc, currentEpc)) {
+                return;
+            }
+            currentEpc = epc;
             WritableMap params = new WritableNativeMap();
             params.putInt("ant", t.getAnt());
             params.putInt("num", t.getNum());
-            params.putString("epc", t.epcString());
+            params.putString("epc", epc);
             if (t.getData() != null) {
                 WritableArray array = new WritableNativeArray();
                 for (byte b : t.getData()) {
@@ -139,6 +146,13 @@ public class RFIDApplication {
         } catch (Exception e) {
             System.err.println("error:" + e.getMessage());
         }
+    }
+
+    public void setReadPower(int power) throws ReaderException {
+        if (reader == null) {
+            throw new RuntimeException("设备未连接");
+        }
+        reader.setReaderPower(power);
     }
 
 }

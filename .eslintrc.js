@@ -48,7 +48,7 @@ module.exports = {
     "no-empty-character-class": "error", // 禁止在正则表达式中出现空字符集
     "no-ex-assign": "error", // 禁止对 catch 子句的参数重新赋值
     "no-extra-boolean-cast": "error", // 禁止不必要的布尔类型转换
-    "no-extra-parens": ["error", "all"], // 禁止冗余的括号
+    "no-extra-parens": ["off", "all"], // 禁止冗余的括号
     "no-extra-semi": "error", // 禁止不必要的分号
     "no-func-assign": "error", // 禁止对 function 声明重新赋值
     "no-inner-declarations": "warn", // 禁止在嵌套的块中出现变量声明或 function 声明
@@ -180,7 +180,7 @@ module.exports = {
       asyncArrow: "always", // 异步箭头函数`async`关键字与`()`间要有空格
     }],
     "object-curly-spacing": ["off", "always"], // 对象前后添加空格，如果是`{}`则不添加
-    "object-property-newline": ["error", { allowAllPropertiesOnSameLine: false }], // 属性换行
+    "object-property-newline": ["off", { allowAllPropertiesOnSameLine: false }], // 属性换行
     // 属性个数超过3个换行
     // 'object-curly-newline': [
     //     'error',
@@ -193,7 +193,7 @@ module.exports = {
     // ],
     "arrow-spacing": "error", // 箭头函数在 => before/after都需要空格
     "space-infix-ops": "error", // 推荐缀操作符周围有空格
-    "spaced-comment": "error", // 要求在注释前有空白
+    "spaced-comment": "off", // 要求在注释前有空白
     "arrow-parens": ["error", "as-needed"],
     "linebreak-style": ["error", "unix"], // 强制使用一致的换行符风格
     // "lines-around-comment": ["error", { beforeBlockComment: true }], // 强制注释周围有空行
@@ -264,7 +264,7 @@ module.exports = {
     "react/no-this-in-sfc": 1, //  防止在无状态功能组件中使用
     "react/no-unescaped-entities": 0, // 防止无效字符出现在标记中
     "react/no-will-update-set-state": 1, // 防止在 componentWillUpdate 中使用 setState
-    "react/require-default-props": 1, // 为每个不需要的道具强制执行 defaultProps 定义
+    "react/require-default-props": 0, // 为每个不需要的道具强制执行 defaultProps 定义
     // "react/require-optimization": 1, // 强制 React 组件具有 shouldComponentUpdate 方法
     "react/require-render-return": 1, // 强制执行 ES5 或 ES6 类以在渲染函数中返回值
     "react/forbid-prop-types": [1, { forbid: ["any"] }], // 禁止某些propTypes

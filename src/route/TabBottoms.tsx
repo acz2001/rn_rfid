@@ -3,16 +3,13 @@ import React from "react"
 import {
   BottomTabType,
   ScreenBottomTabItemType,
-  ScreenBottomTabsType,
 } from "@/route/type"
-
+import {TabsScreens} from "@/route/tabs"
 
 const Tabs: BottomTabType = createBottomTabNavigator()
 const {Navigator: TabsNavigator, Screen: TabsScreen} = Tabs
 
-export const TabsScreens: ScreenBottomTabsType = []
-
-export function TabList(): React.ReactElement | null {
+export function TabBottoms(): React.ReactElement | null {
   if (!TabsScreens.length) return null
   return (
     <TabsNavigator initialRouteName="Test">

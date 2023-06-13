@@ -80,14 +80,6 @@ public class RFIDModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void testEmit() {
-        DeviceEventManagerModule.RCTDeviceEventEmitter emitter = reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class);
-        if (emitter != null) {
-            emitter.emit("tagReadData", "test");
-        }
-    }
-
-    @ReactMethod
     public void startRead(Callback successCallback, Callback errorCallback) {
         try {
             application.startRead();
@@ -107,6 +99,20 @@ public class RFIDModule extends ReactContextBaseJavaModule {
             application.stopRead();
             if (successCallback != null) {
                 successCallback.invoke("stop read success");
+            }
+        } catch (Exception e) {
+            if (errorCallback != null) {
+                errorCallback.invoke(e.getMessage());
+            }
+        }
+    }
+
+    @ReactMethod
+    public void setReadPower(int i, Callback successCallback, Callback errorCallback) {
+        try {
+            application.setReadPower(i);
+            if (successCallback != null) {
+                successCallback.invoke("setting success");
             }
         } catch (Exception e) {
             if (errorCallback != null) {

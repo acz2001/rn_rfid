@@ -1,15 +1,22 @@
-import React from "react"
+import React, {ReactElement} from "react"
 import {RecoilRoot} from "recoil"
+import {ToastProvider} from "react-native-toast-notifications"
 import {NavigationContainer} from "@react-navigation/native"
-import {StackList, TabList} from "@/route"
+import {StackScreens, TabBottoms} from "@/route"
+import DrawerLayout from "@/components/DrawerLayout"
 
-function App(): React.ReactElement {
+function App(): ReactElement {
+
   return (
     <RecoilRoot>
-      <NavigationContainer>
-        <StackList/>
-        <TabList/>
-      </NavigationContainer>
+      <ToastProvider>
+        <NavigationContainer>
+          <DrawerLayout>
+            <StackScreens/>
+            <TabBottoms/>
+          </DrawerLayout>
+        </NavigationContainer>
+      </ToastProvider>
     </RecoilRoot>
   )
 }
