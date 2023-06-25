@@ -1,34 +1,27 @@
-import React, {useEffect, useState} from "react"
+import React, {useEffect} from "react"
+import {StacksList} from "@/route/stacks"
 import {createNativeStackNavigator} from "@react-navigation/native-stack"
 import {ScreenItemType, StackType} from "@/route/type"
-import {StacksList} from "@/route/stacks"
-import {useNavigation} from "@react-navigation/native"
-import {getStorageToken} from "@/utils"
-import {useToast} from "react-native-toast-notifications"
-import {TOAST_DURATION} from "@/global/constants"
+import {useRecoilState, useSetRecoilState} from "recoil"
+import {UserInfoState, WorkbenchBindInfo} from "@/global/state"
+import DeviceInfo from "react-native-device-info"
+import {getStorageUserInfo} from "@/global"
 
 const Stack: StackType = createNativeStackNavigator()
 const {Navigator: StackNavigator, Screen: StackScreen} = Stack
 
-export function StackScreens(): React.ReactElement | null {
+export function StackScreens(): React.ReactElement {
 
-  const Toast = useToast()
-  const [routeName, setRouteName] = useState<string>("Home")
-  const {navigate} = useNavigation()
+  const setBindInfo = useSetRecoilState(WorkbenchBindInfo)
+  const [userInfo, setUserInfo] = useRecoilState(UserInfoState)
 
   useEffect(() => {
-    getStorageToken().then(t => {
-      if (!t) {
-        Toast.show("请先登录", {duration: TOAST_DURATION})
-        navigate("Login" as never)
-        setRouteName("Login")
-      }
-    })
-  }, [])
+    DeviceInfo.getUniqueId().then((deviceId: any) => setBindInfo({deviceId}))
+    !userInfo && setUserInfo(getStorageUserInfo())
+  }, [userInfo])
 
-  if (!StacksList.length) return null
   return (
-    <StackNavigator initialRouteName={routeName}>
+    <StackNavigator>
       {StacksList.map((item: ScreenItemType) => <StackScreen key={item.name} {...item}/>)}
     </StackNavigator>
   )

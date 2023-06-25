@@ -1,20 +1,27 @@
-import React, {ReactElement} from "react"
+import React, {ReactElement, useEffect} from "react"
 import {RecoilRoot} from "recoil"
 import {ToastProvider} from "react-native-toast-notifications"
 import {NavigationContainer} from "@react-navigation/native"
 import {StackScreens, TabBottoms} from "@/route"
-import DrawerLayout from "@/components/DrawerLayout"
+import Drawer from "@/components/Drawer"
+import {storage} from "@/global"
+import {initializeMMKVFlipper} from "react-native-mmkv-flipper-plugin"
+
 
 function App(): ReactElement {
+
+  if (__DEV__) {
+    initializeMMKVFlipper({default: storage})
+  }
 
   return (
     <RecoilRoot>
       <ToastProvider>
         <NavigationContainer>
-          <DrawerLayout>
+          <Drawer>
             <StackScreens/>
             <TabBottoms/>
-          </DrawerLayout>
+          </Drawer>
         </NavigationContainer>
       </ToastProvider>
     </RecoilRoot>

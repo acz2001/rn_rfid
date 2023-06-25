@@ -1,170 +1,215 @@
 import React, {forwardRef, ReactElement, useEffect, useState} from "react"
-import {StyleSheet, View} from "react-native"
-import {Button, Input, Text} from "@rneui/base"
-import {storage} from "@/utils"
+import {KeyboardAvoidingView, ScrollView, StyleSheet, View} from "react-native"
+import {Button, ButtonGroup, Input, Text} from "@rneui/base"
 import {useToast} from "react-native-toast-notifications"
 import {cancelQcTack, getActiveTask, joinQcTask, runningQcTask} from "@/api/task/task"
 import {useNavigation} from "@react-navigation/native"
-import {useRecoilState} from "recoil"
-import {QcTaskInfo} from "@/global/state"
-import FontAwesome from "react-native-vector-icons/FontAwesome"
+import {useRecoilState, useSetRecoilState} from "recoil"
+import {DeviceConnectState, QcTaskInfo, WorkbenchBindInfo} from "@/global/state"
 import {TaskStatus, TaskStatusText} from "@/views/task/types"
-import Dropdown from "react-native-modal-dropdown"
 import workType from "@/wokeType.json"
-import {Workbench} from "@/views/home/types"
 import {TOAST_DURATION} from "@/global/constants"
+import {getStorageDeviceBind} from "@/global"
+import {CancelTaskModalVisibleState} from "@/views/task/state"
+import CancelTask from "@/views/task/CancelTask"
+import {ScreenNavigationProps} from "@/route"
 
 
-export function QcTask(): ReactElement {
+export function QcTask(props: ScreenNavigationProps): ReactElement {
+
   const Toast = useToast()
   const {navigate, goBack} = useNavigation()
   const [qcTask, setQcTask] = useRecoilState(QcTaskInfo)
-
-  const [workbenchOptions, setWorkbenchOptions] = useState<Array<Workbench>>([])
-  const [defaultValue, setDefaultValue] = useState<string>()
-  const [selectWorkbench, setSelectWorkbench] = useState()
+  const [open, setOpen] = useRecoilState(DeviceConnectState)
+  const setVisible = useSetRecoilState(CancelTaskModalVisibleState)
+  const [joinLoading, setJoinLoading] = useState<boolean>(false)
 
   const [workNumber, setWorkNumber] = useState<string>()
 
-  const [selectWorkType, setWorkType] = useState()
-  const [defaultWorkType, setDefaultWorkType] = useState()
+  const [bindInfo] = useRecoilState(WorkbenchBindInfo)
 
-  const [memberList, setMemberList] = useState<any>([])
+  const [groupSelectedIndex, setGroupSelectedIndex] = useState<number>()
+  const [groupSelectedItem, setGroupSelectedItem] = useState<any>()
 
   const getTaskDetail = async () => {
-    const {workbenchId, workbenchName} = await storage.load({key: "workbenchId"})
-    // console.log(`workbenchId === `, workbenchId)
-    // console.log(`workbenchName === `, workbenchName)
-    // console.log(`qcTask === `, qcTask)
-    // if (qcTask) return
-    const {success, errorMessage, data} = await getActiveTask({workbenchId})
+    const {workbenchId} = bindInfo || {}
+    const {success, data} = await getActiveTask({workbenchId})
     if (!success) return
     setQcTask(data)
   }
 
   useEffect(() => {
-    getTaskDetail()
-    console.log(`质检任务加载`)
+    const info = getStorageDeviceBind()
+    if (info) {
+      getTaskDetail()
+    } else {
+      Toast.show("设备未绑定工作台", {duration: TOAST_DURATION})
+    }
   }, [])
 
-  const workTypeSelect = (index: any, opt: any) => {
-    setDefaultWorkType(opt.name)
-    setWorkType(opt)
-    console.log(`工种`, opt)
-  }
-
-  const addWorkItem = async (param: any) => {
-    if (qcTask && qcTask.memberList?.some((i: any) => i.workNumber === param.workNumber)) {
+  const addWorkItem = async () => {
+    if (!groupSelectedItem) {
+      Toast.show("请选择工种", {duration: TOAST_DURATION})
+      return
+    }
+    if (!workNumber) {
+      Toast.show("请输入员工号", {duration: TOAST_DURATION})
+      return
+    }
+    if (qcTask && qcTask.memberList?.some((i: any) => i.workNumber === workNumber)) {
       Toast.show("该员工已上岗", {duration: TOAST_DURATION})
       return
     }
-    const {success, errorMessage} = await joinQcTask({taskId: qcTask?.taskId, memberList: [param]})
-    if (!success) {
-      Toast.show(errorMessage || "加入失败", {duration: TOAST_DURATION})
-      return
+    const param = {
+      workNumber,
+      workTypeId: groupSelectedItem.workTypeId,
+      workTypeName: groupSelectedItem.name,
     }
-    getTaskDetail()
+    try {
+      setJoinLoading(true)
+      const {success, errorMessage} = await joinQcTask({taskId: qcTask?.taskId, memberList: [param]})
+      if (!success) {
+        Toast.show(errorMessage || "加入失败", {duration: TOAST_DURATION})
+        return
+      }
+      getTaskDetail()
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setJoinLoading(false)
+    }
+
   }
 
-  return <View style={styles.container}>
-    <View style={{flex: 1, backgroundColor: "#ccc"}}>
-      <View>
-        <Text style={{fontSize: 20}}>工作台名称：{qcTask?.workbenchName}</Text>
-      </View>
-      <View>
-        <Text style={{fontSize: 20}}>任务状态：{TaskStatusText[qcTask?.taskState as TaskStatus]}</Text>
-      </View>
-      <View>
-        <Text style={{fontSize: 20}}>EPC数量：{qcTask?.epcCount}</Text>
-      </View>
-      <View style={{flexDirection: "row", width: 220}}>
-        <Input
-          containerStyle={{height: 26}}
-          inputContainerStyle={{width: 200, backgroundColor: "#f0f0f0"}}
-          label="员工工号"
-          placeholder="请输入员工工号"
-          onChangeText={setWorkNumber}
-        />
-        <Input
-          inputContainerStyle={{width: 200, backgroundColor: "#f0f0f0"}}
-          label="工种"
-          InputComponent={
-            forwardRef((props, ref) => (
-              <Dropdown
-                showsVerticalScrollIndicator={false}
-                saveScrollPosition={false}
-                style={{backgroundColor: "#f0f0f0", flex: 1, padding: 2}}
-                animated={false}
-                defaultValue={defaultWorkType || "请选择"}
-                textStyle={{fontSize: 26}}
-                options={workType}
-                renderRow={(option: any) => <Text style={{fontSize: 22}}>{option.name}</Text>}
-                renderButtonText={(option: any) => option.name}
-                dropdownStyle={{width: 200, height: 200}}
-                dropdownTextStyle={{fontSize: 20}}
-                onSelect={workTypeSelect}
-              />))}
-        />
-        <View style={{marginTop: 20}}>
+  const handleCancel = async () => {
+    setJoinLoading(true)
+    try {
+      const {success, errorMessage} = await cancelQcTack({taskId: qcTask?.taskId})
+      if (!success) {
+        Toast.show(errorMessage || "取消失败", {duration: TOAST_DURATION})
+        return
+      }
+      Toast.show("操作成功", {duration: TOAST_DURATION})
+      setQcTask(null)
+      goBack()
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setJoinLoading(false)
+    }
+  }
+
+  return (
+    <KeyboardAvoidingView
+      style={{flex: 1}}>
+      <View style={styles.container}>
+        <ScrollView>
+          <View>
+            <Text style={{fontSize: 20}}>工作台名称：{qcTask?.workbenchName}</Text>
+          </View>
+          <View>
+            <Text style={{fontSize: 20}}>任务状态：{TaskStatusText[qcTask?.taskState as TaskStatus]}</Text>
+          </View>
+          <View>
+            <Text style={{fontSize: 20}}>EPC数量：{qcTask?.epcCount}</Text>
+          </View>
+          <ButtonGroup
+            buttons={workType.map((i: any) => i.name)}
+            selectedIndex={groupSelectedIndex}
+            onPress={(idx: number) => {
+              setGroupSelectedIndex(idx)
+              setGroupSelectedItem(workType[idx])
+            }}
+          />
+          <View style={{height: 60}}>
+            <Input
+              containerStyle={{height: 26}}
+              inputContainerStyle={{backgroundColor: "#f0f0f0", maxWidth: 400, borderBottomWidth: 0}}
+              placeholder="请输入员工工号"
+              defaultValue={workNumber || "XYYA"}
+              leftIcon={<Text style={{fontSize: 16}}>员工工号</Text>}
+              leftIconContainerStyle={{borderRightWidth: 1, borderRightColor: "grey", paddingLeft: 6}}
+              rightIcon={<Button
+                title="上岗"
+                loading={joinLoading}
+                buttonStyle={{width: 80}}
+                disabled={qcTask?.taskState === "RUNNING"}
+                onPress={addWorkItem}/>}
+              onChangeText={setWorkNumber}
+            />
+          </View>
+          <View style={{flexDirection: "row"}}>
+
+
+          </View>
+          <Text style={{fontSize: 20}}>已上岗员工：</Text>
+          <View style={{flex: 1, flexDirection: "row", flexWrap: "wrap"}}>
+            {qcTask && qcTask.memberList?.map((item: any, i: number) => (
+              <View
+                key={item.workNumber}
+                style={styles.memberListItem}>
+                <Text ellipsizeMode="tail" numberOfLines={1}>
+                  {`${item.name || ""}${item.workNumber}(${item.workTypeName})`}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </ScrollView>
+        <View style={{flexDirection: "row", justifyContent: "flex-end"}}>
           <Button
+            buttonStyle={{width: 120, marginHorizontal: 16}}
             disabled={qcTask?.taskState === "RUNNING"}
-            title="上岗"
-            onPress={() => {
-              if (!workNumber) return
-              addWorkItem({
-                workNumber,
-                // @ts-ignore
-                workTypeId: selectWorkType!.workTypeId,
-                // @ts-ignore
-                workTypeName: selectWorkType!.name,
-              })
-            }}/>
+            loading={joinLoading}
+            onPress={() => setVisible(true)}
+            title="取消任务"
+          />
+          <Button
+            buttonStyle={{width: 120, marginHorizontal: 16}}
+            disabled={qcTask?.memberList?.length < 3 || qcTask?.taskState === "RUNNING"}
+            title="开始任务"
+            loading={joinLoading}
+            onPress={async () => {
+              setJoinLoading(true)
+              try {
+                if (!open) {
+                  Toast.show("设备未连接", {duration: TOAST_DURATION})
+                  return
+                }
+                const {success, errorMessage} = await runningQcTask({taskId: qcTask?.taskId})
+                if (!success) {
+                  Toast.show(errorMessage || "开始任务出错", {duration: TOAST_DURATION})
+                  return
+                }
+                await getTaskDetail()
+                navigate("Qc" as never)
+              } catch (e) {
+                console.error(e)
+              } finally {
+                setJoinLoading(false)
+              }
+            }}
+          />
         </View>
+        <CancelTask {...props} handleConfirm={handleCancel}/>
       </View>
-      <View style={{flexDirection: "column"}}>
-        <Text style={{fontSize: 20}}>已上岗员工：</Text>
-        {qcTask && qcTask.memberList?.map((item: any) => (
-          <Text style={{fontSize: 20}} key={item.workNumber}>
-            {`${item.name}(${item.workNumber})(${item.workTypeName})`}、
-          </Text>
-        ))}
-      </View>
-      <View style={{width: 140, position: "absolute", right: 200, bottom: 40}}>
-        <Button
-          disabled={qcTask?.taskState === "RUNNING"}
-          onPress={async () => {
-            const {success, errorMessage} = await cancelQcTack({taskId: qcTask?.taskId})
-            if (!success) {
-              Toast.show(errorMessage || "取消失败", {duration: TOAST_DURATION})
-              return
-            }
-            goBack()
-          }}
-          title="取消任务"
-        />
-      </View>
-      <View style={{width: 140, position: "absolute", right: 20, bottom: 40}}>
-        <Button
-          disabled={qcTask?.memberList.length < 3 || qcTask?.taskState === "RUNNING"}
-          title="开始任务"
-          onPress={async () => {
-            const {success, errorMessage} = await runningQcTask({taskId: qcTask?.taskId})
-            if (!success) {
-              Toast.show(errorMessage || "开始任务出错", {duration: TOAST_DURATION})
-              return
-            }
-            await getTaskDetail()
-            navigate("Qc" as never)
-          }}
-        />
-      </View>
-    </View>
-  </View>
+    </KeyboardAvoidingView>
+  )
 }
 
 const styles = StyleSheet.create({
   container: {
     padding: 8,
     flex: 1,
+    backgroundColor: "#ccc",
+  },
+  memberListItem: {
+    backgroundColor: "#f0f0f0",
+    height: 40,
+    width: 200,
+    padding: 6,
+    margin: 2,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
 })

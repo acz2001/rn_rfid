@@ -22,6 +22,8 @@ export interface BaseQueryCondition {
   timestamp: number;
 }
 
+export type StorageSetValue = string | boolean | number | Uint8Array
+
 export interface WorkerProfile {
   readonly workerId: string;
   readonly workerStatus: "UNCONFIRMED" | "ON_JOB" | "LEFT_JOB";
@@ -43,6 +45,6 @@ export interface UserInfo {
   readonly userToken: string;
   readonly roles: Array<string>;
   readonly authorities: Array<string>;
-  readonly workerProfile?: WorkerProfile;
+  readonly workerProfile: WorkerProfile;
   readonly hr: boolean;
 }

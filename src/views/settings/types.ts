@@ -25,10 +25,10 @@ export const settingOpts: Array<SettingOptItem> = [
     key: "power",
     name: "功率",
   },
-  {
-    key: "ant",
-    name: "天线",
-  },
+  // {
+  //   key: "ant",
+  //   name: "天线",
+  // },
 ]
 
 export const powerOptions = [

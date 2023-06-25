@@ -2,7 +2,7 @@ import React from "react"
 import {NativeStackNavigatorProps} from "react-native-screens/lib/typescript/native-stack/types"
 import {NativeStackNavigationEventMap, NativeStackNavigationOptions} from "@react-navigation/native-stack"
 import {
-  DefaultNavigatorOptions,
+  DefaultNavigatorOptions, EventMapBase, NavigationProp,
   ParamListBase,
   RouteConfig,
   StackNavigationState,
@@ -11,6 +11,8 @@ import {
 } from "@react-navigation/native"
 import {BottomTabNavigationEventMap, BottomTabNavigationOptions} from "@react-navigation/bottom-tabs"
 import {BottomTabNavigationConfig} from "@react-navigation/bottom-tabs/lib/typescript/src/types"
+import {RouteProp} from "@react-navigation/core/lib/typescript/src/types"
+import {EventListenerCallback} from "@react-navigation/core/src/types"
 
 export type StackType = TypedNavigator<ParamListBase,
   StackNavigationState<ParamListBase>,
@@ -47,3 +49,29 @@ export type ScreenBottomTabItemType = RouteConfig<ParamListBase,
   BottomTabNavigationEventMap>
 
 export type ScreenBottomTabsType = Array<ScreenBottomTabItemType>
+
+export type ScreenNavigationProps = {
+  route: RouteProp<ParamListBase, keyof ParamListBase>;
+  navigation: {
+    addListener: (
+      type: keyof EventMapBase | string,
+      callback: EventListenerCallback<EventMapBase, keyof EventMapBase>,
+    ) => void;
+    canGoBack: any;
+    dispatch: any;
+    getId: any;
+    getParent: (id?: string) => NavigationProp<ParamListBase>;
+    getState: any;
+    goBack: () => void;
+    isFocused: any;
+    navigate: (...args: any) => void;
+    pop: any;
+    popToTop: any;
+    push: any;
+    removeListener: any;
+    replace: (name: keyof ParamListBase) => void;
+    reset: any;
+    setOptions: (option: NativeStackNavigationOptions) => void;
+    setParams: (params?: any) => void;
+  };
+}

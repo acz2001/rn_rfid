@@ -1,15 +1,15 @@
-import React, {forwardRef, ReactElement, useEffect, useRef, useState} from "react"
+import React, {forwardRef, ReactElement, useEffect, useState} from "react"
 import {Button, Input, Overlay, Text} from "@rneui/base"
 import {View} from "react-native"
 import {OverlayProps} from "@rneui/base/dist/Overlay/Overlay"
 import Dropdown from "react-native-modal-dropdown"
 import {Workbench} from "@/views/home/types"
-import {getStorageUserInfo, storage} from "@/utils"
+import {getStorageDeviceBind, getStorageUserInfo, QcTaskInfo, setStorageDeviceBind, WorkbenchBindInfo} from "@/global"
 import {bindWorkbench, getWorkbenchList} from "@/api/task/workbench"
 import {ToastType, useToast} from "react-native-toast-notifications"
 import {TOAST_DURATION} from "@/global/constants"
 import {useRecoilState, useSetRecoilState} from "recoil"
-import {WorkbenchBindInfo} from "@/global/state"
+import {getActiveTask} from "@/api/task/task"
 
 export interface WorkbenchBindModalProps extends OverlayProps {
   onBind: (v: boolean) => void
@@ -23,10 +23,12 @@ export default function WorkbenchBindModal({onBind, ...props}: WorkbenchBindModa
   const [selectWorkbench, setSelectWorkbench] = useState<Workbench>()
   const [loading, setLoading] = useState<boolean>(false)
   const [bindInfo, setBindInfo] = useRecoilState(WorkbenchBindInfo)
+  const setQcTask = useSetRecoilState(QcTaskInfo)
 
   const getWorkbench = async () => {
     try {
-      const userInfo = await getStorageUserInfo()
+      const userInfo = getStorageUserInfo()
+      console.log(userInfo)
       const {data, success} = await getWorkbenchList({
         organizationId: userInfo?.workerProfile?.organizationId as string,
       })
@@ -37,18 +39,27 @@ export default function WorkbenchBindModal({onBind, ...props}: WorkbenchBindModa
     }
   }
 
+  const getTaskDetail = async ({workbenchId}: any) => {
+    try {
+      const {success, data} = await getActiveTask({workbenchId})
+      if (success) setQcTask(data)
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
   useEffect(() => {
     getWorkbench()
-    storage.load({key: "deviceBindInfo"}).then(r => {
-      setDefaultValue(r.name)
-      setSelectWorkbench(r)
-    })
+    const info = getStorageDeviceBind()
+    if (info) {
+      setDefaultValue(info.name)
+      setSelectWorkbench(info)
+    }
   }, [])
 
   const dropdownSelect = (index: any, opt: any) => {
     setDefaultValue(opt.name)
     setSelectWorkbench(opt)
-    console.log(`工作台`, opt)
   }
 
   const handleBind = async () => {
@@ -61,11 +72,9 @@ export default function WorkbenchBindModal({onBind, ...props}: WorkbenchBindModa
         Toast.show(errorMessage || "绑定失败", {duration: TOAST_DURATION})
         return
       }
+      await getTaskDetail({workbenchId})
       Toast.show("绑定成功", {duration: TOAST_DURATION})
-      await storage.save({
-        key: "deviceBindInfo",
-        data: param,
-      })
+      setStorageDeviceBind(JSON.stringify(param))
       setBindInfo(param)
       onBind(false)
     } catch (e) {
@@ -95,7 +104,12 @@ export default function WorkbenchBindModal({onBind, ...props}: WorkbenchBindModa
                 defaultValue={defaultValue || "请选择"}
                 textStyle={{fontSize: 26, color: "#000"}}
                 options={workbenchOptions}
-                renderRow={(option: Workbench) => <Text style={{fontSize: 22}}>{option.name}</Text>}
+                renderRow={(option: Workbench) => (
+                  <Text
+                    style={{fontSize: 22, backgroundColor: "white"}}>
+                    {option.name}
+                  </Text>
+                )}
                 renderButtonText={(option: any) => option.name}
                 dropdownStyle={{width: 240, height: 200}}
                 dropdownTextStyle={{fontSize: 20}}
@@ -103,7 +117,11 @@ export default function WorkbenchBindModal({onBind, ...props}: WorkbenchBindModa
               />))}
         />
         <View style={{paddingLeft: 10, paddingRight: 10}}>
-          <Button loading={loading} title="绑定" onPress={handleBind}/>
+          <Button
+            loading={loading}
+            title="绑定"
+            disabled={!workbenchOptions.length}
+            onPress={handleBind}/>
         </View>
       </View>
     </Overlay>

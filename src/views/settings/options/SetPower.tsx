@@ -44,7 +44,7 @@ export default function SetPower(): ReactElement {
       getPower()
       // setReaderInfo(info)
     }, (err: any): void => {
-      Toast.show("设置失败" + err,{duration: TOAST_DURATION})
+      Toast.show("设置失败" + err, {duration: TOAST_DURATION})
       console.error(`getReaderInfo:error ===`, err)
     })
   }

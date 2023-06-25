@@ -3,7 +3,6 @@ package com.rfid;
 import com.facebook.react.bridge.*;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.solid.*;
-import kotlin.text.UStringsKt;
 
 import java.util.Objects;
 
@@ -41,13 +40,9 @@ public class RFIDApplication {
      * 连接
      */
     public void connect(String address) throws Exception {
-       this.shutdown();
+        this.shutdown();
         this.address = address;
         reader = SReader.create(address);
-
-        // todo
-        this.currentEpc = null;
-        // 进行连接
         reader.Connect();
     }
 
@@ -60,10 +55,11 @@ public class RFIDApplication {
     }
 
     public void shutdown() {
+        this.currentEpc = null;
         if (reader != null) {
+            this.stopRead();
             reader.ShutDown();
             reader = null;
-            this.currentEpc = null;
         }
     }
 
@@ -100,13 +96,6 @@ public class RFIDApplication {
             params.putInt("ant", t.getAnt());
             params.putInt("num", t.getNum());
             params.putString("epc", epc);
-            if (t.getData() != null) {
-                WritableArray array = new WritableNativeArray();
-                for (byte b : t.getData()) {
-                    array.pushInt(b);
-                }
-                params.putArray("data", array);
-            }
 
             DeviceEventManagerModule.RCTDeviceEventEmitter emitter = reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class);
             if (emitter != null) {
@@ -117,10 +106,11 @@ public class RFIDApplication {
     };
 
     private volatile boolean readStop;
+    private Thread thread = null;
 
     public void startRead() {
         readStop = false;
-        new Thread(() -> {
+        thread = new Thread(() -> {
 
             // 添加事件监听器
             reader.addReadListener(readerListener);
@@ -134,14 +124,21 @@ public class RFIDApplication {
                     System.err.println("error:" + e.getMessage());
                 }
             }
-        }).start();
+        });
+        thread.start();
     }
 
     public void stopRead() {
+        if (readStop) {
+            return;
+        }
         readStop = true;
-        reader.removeReadListener(readerListener);
+//        reader.removeReadListener(readerListener);
         try {
-            reader.Inventry_stop();
+            while (thread.isAlive()) {
+                Thread.sleep(50);
+            }
+//            reader.Inventry_stop();
             reader.removeReadListener(readerListener);
         } catch (Exception e) {
             System.err.println("error:" + e.getMessage());

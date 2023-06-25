@@ -1,7 +1,6 @@
 package com.rfid;
 
 import com.facebook.react.bridge.*;
-import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.solid.ReaderException;
 import com.solid.ReaderInfo;
 

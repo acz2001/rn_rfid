@@ -1,30 +1,31 @@
 import React, {useState, ReactElement, useEffect} from "react"
-import {FlatList, SafeAreaView, StyleSheet, Text, TouchableOpacity, View} from "react-native"
+import {ActivityIndicator, FlatList, SafeAreaView, StyleSheet, Text, TouchableOpacity, View} from "react-native"
 import {getHistoryTask} from "@/api/task/task"
 import {useToast} from "react-native-toast-notifications"
-import {TaskStatus, TaskStatusText} from "@/views/task/types"
-import {storage} from "@/utils"
+import {TaskStatus, TaskStatusText} from "@/views/task"
 import FontAwesome from "react-native-vector-icons/FontAwesome"
+import {useRecoilState, useSetRecoilState} from "recoil"
+import {WorkbenchBindInfo} from "@/global"
+import {useRafState} from "ahooks"
+import {QueryHistoryTaskItem} from "@/views/task/state"
+import {ScreenNavigationProps} from "@/route"
 
 const Item = ({item, onPress, style}: any) => (
-  <TouchableOpacity onPress={onPress} style={[styles.item, style]}>
+  <TouchableOpacity
+    activeOpacity={0.5}
+    onPress={onPress}
+    style={[styles.item, style]}>
     <View style={{flexDirection: "row"}}>
       <Text
         ellipsizeMode="tail"
         numberOfLines={1}
-        style={[styles.title, {width: 60}]}>
-        {item.workbenchName}
-      </Text>
-      <Text
-        ellipsizeMode="tail"
-        numberOfLines={1}
-        style={[styles.title, {width: 220}]}>
+        style={[styles.title, {width: 400}]}>
         {item.memberList && item.memberList.map((t: any) => t.name).join("、")}
       </Text>
       <Text
         ellipsizeMode="tail"
         numberOfLines={1}
-        style={[styles.title, {width: 100}]}>
+        style={[styles.title, {width: 60}]}>
         {TaskStatusText[item.taskState as TaskStatus]}
       </Text>
       <Text
@@ -42,7 +43,7 @@ const Item = ({item, onPress, style}: any) => (
       <Text
         ellipsizeMode="tail"
         numberOfLines={1}
-        style={[styles.title, {width: 100}]}>
+        style={[styles.title, {width: 60}]}>
         {item.epcCount}
       </Text>
     </View>
@@ -55,19 +56,13 @@ const ItemTitle = () => (
     <Text
       ellipsizeMode="tail"
       numberOfLines={1}
-      style={[styles.title, {width: 60}]}>
-      工作台
-    </Text>
-    <Text
-      ellipsizeMode="tail"
-      numberOfLines={1}
-      style={[styles.title, {width: 220}]}>
+      style={[styles.title, {width: 400}]}>
       参与员工
     </Text>
     <Text
       ellipsizeMode="tail"
       numberOfLines={1}
-      style={[styles.title, {width: 100}]}>
+      style={[styles.title, {width: 60}]}>
       状态
     </Text>
     <Text
@@ -85,30 +80,32 @@ const ItemTitle = () => (
     <Text
       ellipsizeMode="tail"
       numberOfLines={1}
-      style={[styles.title, {width: 100}]}>
+      style={[styles.title, {width: 70}]}>
       质检数量
     </Text>
   </View>
 )
 
-export function HistoryTask(): ReactElement {
+export function HistoryTask({navigation, ...props}: ScreenNavigationProps): ReactElement {
 
   const toast = useToast()
-  const [loading, setLoading] = useState<boolean>(false)
+  const [isEffect, setIsEffect] = useState(true)
+  const [loading, setLoading] = useState<boolean>(true)
   const [listData, setListData] = useState([])
-  const [selectedId, setSelectedId] = useState(null)
+  const setSelectedItem = useSetRecoilState(QueryHistoryTaskItem)
+  const [bindInfo] = useRecoilState(WorkbenchBindInfo)
 
   const getData = async () => {
     try {
       setLoading(true)
-      const {workbenchId} = await storage.load({key: "deviceBindInfo"})
+      const {workbenchId} = bindInfo || {}
       const {success, errorMessage, data} = await getHistoryTask({workbenchId, page: 1, pageSize: 100})
-      if (!success) toast.show(errorMessage || "获取失败", {type: "warning"})
-      setListData(data.content)
+      if (!success) toast.show(errorMessage || "获取历史任务失败", {type: "warning"})
+      setListData(data.content || [])
+      setLoading(false)
+      setIsEffect(false)
     } catch (e) {
       console.error(e)
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -116,31 +113,31 @@ export function HistoryTask(): ReactElement {
     getData()
   }, [])
 
-  const renderItem = ({item}: any) => {
-
-    return (
-      <Item
-        item={item}
-        onPress={() => setSelectedId(item.id)}
-        style={{backgroundColor: "white"}}
-      />
-    )
-  }
+  const renderItem = ({item}: any) => (
+    <Item
+      item={item}
+      onPress={() => {
+        setSelectedItem(item)
+        navigation.navigate("HistoryTaskDetail")
+      }}
+      style={{backgroundColor: "white"}}
+    />
+  )
 
   return (
     <View style={styles.container}>
       <ItemTitle/>
       <SafeAreaView>
-        <FlatList
-          // ListHeaderComponent={<Item item={{title: "头部"}} style={styles.item}/>}
-          // ListFooterComponent={<Item item={{title: "底部"}} style={styles.item}/>}
-          refreshing={loading}
-          data={listData}
-          onRefresh={getData}
-          renderItem={renderItem}
-          keyExtractor={(item: any) => item.taskId}
-          extraData={selectedId}
-        />
+        {isEffect ?
+          <ActivityIndicator size="large"/> :
+          <FlatList
+            refreshing={loading}
+            data={listData}
+            onRefresh={getData}
+            renderItem={renderItem}
+            keyExtractor={(item: any) => item.taskId}
+          />}
+
       </SafeAreaView>
     </View>
   )

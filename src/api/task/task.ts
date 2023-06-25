@@ -58,15 +58,15 @@ export function runningQcTask(params: any) {
   })
 }
 
-export function cancelQcTack(data: any) {
+export function cancelQcTack(params: any) {
   return request({
     url: "qc/task/cancel",
     method: Methods.POST,
-    data,
+    params,
   })
 }
 
-export function getCurrentTask(params: any) {
+export function getCurrentTaskRecord(params: any) {
   return request({
     url: "qc/record/currentTask",
     method: Methods.GET,
@@ -86,6 +86,14 @@ export function getHistoryTask(params: any) {
   return request({
     url: "qc/task/historyTask",
     method: Methods.GET,
+    params,
+  })
+}
+
+export function completeTask(params: any) {
+  return request({
+    url: "qc/task/complete",
+    method: Methods.POST,
     params,
   })
 }

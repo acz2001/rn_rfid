@@ -2,8 +2,8 @@ import {atom} from "recoil"
 import {UserInfo} from "./types"
 
 
-export const userInfo = atom<UserInfo | null>({
-  key: "userInfo",
+export const UserInfoState = atom<UserInfo | null>({
+  key: "UserInfoState",
   default: null,
 })
 
@@ -30,4 +30,19 @@ export const DeviceReaderInfoState = atom<any>({
 export const WorkbenchBindInfo = atom<any>({
   key: "WorkbenchBindInfo",
   default: null,
+})
+
+export const DrawerLayoutPosition = atom<"left" | "right">({
+  key: "DrawerLayoutPosition",
+  default: "left",
+})
+
+export const SignOutModalVisibleState = atom<boolean>({
+  key: "SignOutModalVisibleState",
+  default: false,
+})
+
+export const DrawerLockModeState = atom<"unlocked" | "locked-closed" | "locked-open">({
+  key: "DrawerLockModeState",
+  default: undefined,
 })

@@ -1,28 +1,50 @@
 import {ScreensType} from "@/route/type"
 import {LoginForm} from "@/views/login"
 import {Home} from "@/views/home"
-import {Button, Text} from "@rneui/base"
+import {Text} from "@rneui/base"
 import FontAwesome from "react-native-vector-icons/FontAwesome"
-import React, {Component, ReactElement, ReactNode, useCallback, useRef, useState} from "react"
+import React, {ReactElement, useCallback} from "react"
 import {SystemSetting} from "@/views/settings"
 import {TouchableOpacity, View} from "react-native"
 import {useRecoilState} from "recoil"
 import {TaskStatus, QcTask, Qc, HistoryTask, TaskStatusText} from "@/views/task"
-import {QcTaskInfo} from "@/global/state"
+import {DeviceConnectState, QcTaskInfo} from "@/global/state"
 import {HeaderBackButtonProps} from "@react-navigation/native-stack/lib/typescript/src/types"
-import {DrawerFn} from "@/components/DrawerLayout"
+import {DrawerFn} from "@/components/Drawer"
+import QcRecord from "@/views/task/QcRecord"
+import LoadingPage from "@/views/LoadingPage"
+import HistoryTaskDetail from "@/views/task/HistoryTaskDetail"
 
 
-export function QcTitle(): ReactElement {
+type QcTitleProps = {
+  title?: string;
+  hasTask?: boolean
+}
+
+export function QcTitle({hasTask, title}: QcTitleProps): ReactElement {
 
   const [qcTask, setQcTask] = useRecoilState(QcTaskInfo)
+  const [open] = useRecoilState(DeviceConnectState)
+
+  const hasQcTitleNode: ReactElement = (
+    <View>
+      <Text style={{fontSize: 18}}>
+        {`${qcTask?.workbenchName}(${TaskStatusText[qcTask?.taskState as TaskStatus]})`}
+        {!open ? "(读写器未连接.........)" : ""}
+      </Text>
+    </View>
+  )
+
+  const workbenchTitleNode: ReactElement = (
+    <Text style={{fontSize: 18}}>{title}{qcTask ? `(${qcTask?.workbenchName})` : ""}</Text>
+  )
 
   return (<View>
-    <Text style={{fontSize: 18}}>{`${qcTask?.workbenchName}(${TaskStatusText[qcTask?.taskState as TaskStatus]})`}</Text>
+    {hasTask ? hasQcTitleNode : workbenchTitleNode}
   </View>)
 }
 
-function HomeLeftTitle() {
+export function HomeLeftTitle(props:any) {
 
   const openDrawer = useCallback(() => {
     DrawerFn.current?.openDrawer()
@@ -36,6 +58,12 @@ function HomeLeftTitle() {
 
 export const StacksList: ScreensType = [
   {
+    name: "LoadingPage",
+    component: LoadingPage,
+    options: {header: () => null},
+    navigationKey: "LoadingPage",
+  },
+  {
     name: "Login",
     component: LoginForm,
     options: {headerShown: false},
@@ -46,9 +74,8 @@ export const StacksList: ScreensType = [
     component: Home,
     options: {
       headerBackVisible: true,
-      headerLeft: (props: HeaderBackButtonProps) => <HomeLeftTitle/>,
+      headerRight: (props: HeaderBackButtonProps) => <HomeLeftTitle {...props} />,
       headerTitle: () => <Text>质检系统</Text>,
-      // headerRight: () => <Text>我是右</Text>,
       headerTitleAlign: "center",
     },
     navigationKey: "Home",
@@ -66,9 +93,9 @@ export const StacksList: ScreensType = [
     name: "Qc",
     component: Qc,
     options: {
-      headerTitle: () => <QcTitle/>,
+      headerTitle: () => <QcTitle hasTask/>,
       headerTitleAlign: "center",
-      headerRight: () => null,
+      headerRight: (props: HeaderBackButtonProps) => <HomeLeftTitle/>,
     },
     navigationKey: "Qc",
   },
@@ -76,8 +103,9 @@ export const StacksList: ScreensType = [
     name: "QcTask",
     component: QcTask,
     options: {
-      headerTitle: () => <Text>质检任务</Text>,
+      headerTitle: () => <QcTitle title="质检任务"/>,
       headerTitleAlign: "center",
+      headerRight: (props: HeaderBackButtonProps) => <HomeLeftTitle/>,
     },
     navigationKey: "QcTask",
   },
@@ -85,9 +113,27 @@ export const StacksList: ScreensType = [
     name: "History",
     component: HistoryTask,
     options: {
-      headerTitle: () => <Text>历史任务</Text>,
+      headerTitle: () => <QcTitle title="历史任务(最近100条记录)"/>,
       headerTitleAlign: "center",
     },
     navigationKey: "History",
+  },
+  {
+    name: "QcRecord",
+    component: QcRecord,
+    options: {
+      headerTitle: () => <QcTitle title="质检记录"/>,
+      headerTitleAlign: "center",
+    },
+    navigationKey: "QcRecord",
+  },
+  {
+    name: "HistoryTaskDetail",
+    component: HistoryTaskDetail,
+    options: {
+      headerTitle: () => <Text>任务详情</Text>,
+      headerTitleAlign: "center",
+    },
+    navigationKey: "HistoryTaskDetail",
   },
 ]

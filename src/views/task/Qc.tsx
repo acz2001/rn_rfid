@@ -1,59 +1,75 @@
-import React, {forwardRef, ReactElement, useEffect, useState} from "react"
-import {View, StyleSheet, Image, AppState, NativeEventEmitter, NativeModules} from "react-native"
-import {Button, Input, LinearProgress, Skeleton, Text} from "@rneui/base"
+import React, {ReactElement, useEffect, useLayoutEffect, useState} from "react"
+import {View, StyleSheet, Image, NativeEventEmitter, NativeModules, KeyboardAvoidingView} from "react-native"
+import {Button, ButtonGroup, Input, LinearProgress, Skeleton, Text} from "@rneui/base"
 import FontAwesome from "react-native-vector-icons/FontAwesome"
 import {useRecoilState, useSetRecoilState} from "recoil"
 import {DeviceConnectState, DeviceReadState, QcTaskInfo} from "@/global/state"
 import {useToast} from "react-native-toast-notifications"
 import {TOAST_DURATION} from "@/global/constants"
-import {getStorageUserInfo} from "@/utils"
+import {getStorageDeviceBind, getStorageUserInfo} from "@/global"
 import {getMemberQty, getQcTaskInfo, recordEpc} from "@/api/task/task"
 import {QcWorkText, QcWorkType} from "@/views/task/types"
 import CompleteTask from "@/views/task/CompleteTask"
-import {CompleteTaskModalVisibleState} from "@/views/task/state"
+import {
+  CompleteTaskModalVisibleState,
+  CreateTaskModalVisibleState,
+} from "@/views/task/state"
+import {ScreenNavigationProps} from "@/route"
+import CreateTask from "@/views/task/CreateTask"
+import LinearGradient from "react-native-linear-gradient"
+import {useDebounceFn} from "ahooks"
 
 const {RFID: RFIDApplication = {}} = NativeModules
 
-export function Qc(): ReactElement {
+export function Qc({navigation, ...props}: ScreenNavigationProps): ReactElement {
 
   const Toast = useToast()
   const [loading, setLoading] = useState<boolean>(false)
   const [qcTask, setQcTask] = useRecoilState(QcTaskInfo)
-  const [open, setOpen] = useRecoilState(DeviceConnectState)
-  const [isRead, setRead] = useRecoilState(DeviceReadState)
+  const [open] = useRecoilState(DeviceConnectState)
+  const setRead = useSetRecoilState(DeviceReadState)
   const [activeTaskInfo, setActiveTaskInfo] = useState<Array<any>>([])
   const [epcInfo, setEpcInfo] = useState<any>()
+  const [total, setTotal] = useState<number>(qcTask?.epcCount)
 
   const setCompleteTaskVisible = useSetRecoilState(CompleteTaskModalVisibleState)
+  const [quickVisible, setQuickTaskVisible] = useRecoilState(CreateTaskModalVisibleState)
+  const [epcResultSelected, setEpcResultSelected] = useState<string>("0")
 
   const getTaskQty = async () => {
     const {success, data} = await getMemberQty({taskId: qcTask?.taskId})
     if (success) setActiveTaskInfo(data)
   }
 
-  const getData = async (epc: any) => {
+  const getData = async ({epc}: any) => {
     setLoading(true)
     try {
-      // @ts-ignore
-      const {workerProfile: {workerId}} = await getStorageUserInfo() || {}
-      const {success, errorMessage} = await recordEpc({workerId, epc, taskId: qcTask?.taskId})
+      const {deviceId} = getStorageDeviceBind() || {}
+      const {workerProfile} = getStorageUserInfo() || {}
+      const {workerId} = workerProfile || {}
+      const {success, errorMessage} = await recordEpc({
+        workerId,
+        epc,
+        deviceId,
+        epcResult: epcResultSelected,
+        taskId: qcTask?.taskId,
+      })
       if (!success) {
         Toast.show(errorMessage || "读取异常", {duration: TOAST_DURATION})
         setLoading(false)
         return
       }
-      const resList = await Promise.all([
+      Promise.all([
         getQcTaskInfo({taskId: qcTask?.taskId}),
         getMemberQty({taskId: qcTask?.taskId}),
       ])
+        .then(([{data: task}, {data: member}]) => {
+          setQcTask(task)
+          setActiveTaskInfo(member)
+          setLoading(false)
+        })
+      setTotal((val: number) => (val += 1))
       setEpcInfo(epc)
-      if (resList[0].success) {
-        setQcTask(resList[0].data)
-      }
-      if (resList[1].success) {
-        setActiveTaskInfo(resList[1].data)
-        setLoading(false)
-      }
     } catch (e) {
       console.error(e)
     } finally {
@@ -61,9 +77,14 @@ export function Qc(): ReactElement {
     }
   }
 
-  useEffect(() => {
+  const {run} = useDebounceFn(getData, {wait: 500})
+
+  useLayoutEffect(() => {
     getTaskQty()
-    if (open && !isRead) {
+  }, [])
+
+  useEffect(() => {
+    if (open) {
       RFIDApplication.startRead((msg: any): void => {
         setRead(true)
       }, (err: any): void => {
@@ -71,98 +92,101 @@ export function Qc(): ReactElement {
       })
     }
     const eventEmitter: NativeEventEmitter = new NativeEventEmitter(RFIDApplication)
-    eventEmitter.addListener("tagReadData", ({epc}: any) => {
-      getData(epc)
-    })
+    eventEmitter.addListener("tagReadData", run)
     return (): void => {
       eventEmitter.removeAllListeners("tagReadData")
-      RFIDApplication.stopRead((msg: any): void => {
-        console.log(`stopRead:success === `, msg)
-        setRead(false)
-      }, (err: any): void => {
-        console.error(`stopRead:error ===`, err)
-        Toast.show(err, {duration: TOAST_DURATION})
-      })
     }
-  }, [])
+  }, [open])
 
   const readEpcNode: ReactElement = (
     <>
       <View style={{flexDirection: "row"}}>
         <View style={{flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center"}}>
-          <Text h4>EPC:</Text>
           {loading ? <Skeleton
-            LinearGradientComponent={forwardRef(() => <Text>加载中</Text>)}
+            LinearGradientComponent={LinearGradient}
             animation="wave"
             width={300}
             height={26}
-          /> : <Text h4>{epcInfo}</Text>}
+          /> : <View style={{height: 26}}>
+            {epcInfo && <Text h4>EPC:{epcInfo}</Text>}
+          </View>}
         </View>
-        {/*<Text h4>EPC:*/}
-        {/*  {loading ? <Skeleton*/}
-        {/*    LinearGradientComponent={forwardRef(() => <Text>加载中</Text>)}*/}
-        {/*    style={{backgroundColor: "red"}}*/}
-        {/*    animation="wave"*/}
-        {/*    width={300}*/}
-        {/*    height={26}*/}
-        {/*  /> : <Text h4>{epcInfo}</Text>}*/}
-        {/*</Text>*/}
       </View>
       <View style={{flexDirection: "row"}}>
         <View style={styles.description}>
           <View style={{flexDirection: "row", alignItems: "center"}}>
-            <Text>尺码：</Text>
             {loading ? <Skeleton
-              LinearGradientComponent={forwardRef(() => <Text>加载中</Text>)}
+              LinearGradientComponent={LinearGradient}
               animation="wave"
               width={100}
               height={18}
-            /> : <Text style={{fontSize: 16}}>L</Text>}
+              style={{marginBottom: 6}}
+            /> : <>
+              <Text>尺码：</Text>
+              <Text style={{fontSize: 16}}>L</Text>
+            </>}
           </View>
           <View style={{flexDirection: "row", alignItems: "center"}}>
-            <Text>颜色：</Text>
             {loading ? <Skeleton
-              LinearGradientComponent={forwardRef(() => <Text>加载中</Text>)}
+              LinearGradientComponent={LinearGradient}
               animation="wave"
               width={100}
               height={18}
-            /> : <Text style={{fontSize: 16}}>黄色</Text>}
+              style={{marginBottom: 6}}
+            /> : <>
+              <Text>颜色：</Text>
+              <Text style={{fontSize: 16}}>黄色</Text>
+            </>}
           </View>
           <View style={{flexDirection: "row", alignItems: "center"}}>
-            <Text>尺码：</Text>
             {loading ? <Skeleton
-              LinearGradientComponent={forwardRef(() => <Text>加载中</Text>)}
+              LinearGradientComponent={LinearGradient}
               animation="wave"
               width={100}
               height={18}
-            /> : <Text style={{fontSize: 16}}>大小</Text>}
+              style={{marginBottom: 6}}
+            /> : <>
+              <Text>尺码：</Text>
+              <Text style={{fontSize: 16}}>大小</Text>
+            </>}
           </View>
           <View style={{flexDirection: "row", alignItems: "center"}}>
-            <Text>大小：</Text>
             {loading ? <Skeleton
-              LinearGradientComponent={forwardRef(() => <Text>加载中</Text>)}
+              LinearGradientComponent={LinearGradient}
               animation="wave"
               width={100}
               height={18}
-            /> : <Text style={{fontSize: 16}}>小</Text>}
+              style={{marginBottom: 6}}
+            /> : <>
+              <Text>大小：</Text>
+              <Text style={{fontSize: 16}}>小</Text>
+            </>}
           </View>
           <View style={{flexDirection: "row", alignItems: "center"}}>
-            <Text>尺码：</Text>
             {loading ? <Skeleton
-              LinearGradientComponent={forwardRef(() => <Text>加载中</Text>)}
+              LinearGradientComponent={LinearGradient}
               animation="wave"
               width={100}
               height={18}
-            /> : <Text style={{fontSize: 16}}>L</Text>}
+              style={{marginBottom: 6}}
+            /> : <>
+              <Text>尺码：</Text>
+              <Text style={{fontSize: 16}}>L</Text>
+            </>}
           </View>
           <View style={{flexDirection: "row", alignItems: "center"}}>
-            <Text>是否需要配件：</Text>
-            {loading ? <Skeleton
-              LinearGradientComponent={forwardRef(() => <Text>加载中</Text>)}
-              animation="wave"
-              width={100}
-              height={18}
-            /> : <Text style={{fontSize: 16}}>是</Text>}
+            {loading ?
+              <Skeleton
+                LinearGradientComponent={LinearGradient}
+                animation="wave"
+                width={100}
+                height={18}
+                style={{marginBottom: 6}}
+              /> :
+              <>
+                <Text>是否需要配件：</Text>
+                <Text style={{fontSize: 16}}>是</Text>
+              </>}
           </View>
         </View>
         <View>
@@ -184,86 +208,97 @@ export function Qc(): ReactElement {
     </View>
   )
 
-  return (<View style={styles.container}>
-    <View style={styles.nav}>
-      <View style={{flexDirection: "row"}}>
-        <Text>开始时间：</Text>
-        <Text>{qcTask?.startTime}</Text>
-      </View>
-      {/* <View style={{flexDirection: "row"}}>*/}
-      {/*  <Text>本组效能：</Text><Text>34</Text>*/}
-      {/*  <View style={{width: 100, justifyContent: "center"}}>*/}
-      {/*    <LinearProgress value={0.5} color="primary" style={{height: 20, borderRadius: 6}}/>*/}
-      {/*  </View>*/}
-      {/* </View>*/}
-      {/* <View style={{flexDirection: "row"}}>*/}
-      {/*  <Text>平均效能：</Text><Text>34</Text>*/}
-      {/*  <View style={{width: 100, justifyContent: "center"}}>*/}
-      {/*    <LinearProgress value={0.2} color="primary" style={{height: 20, borderRadius: 6}}/>*/}
-      {/*  </View>*/}
-      {/* </View>*/}
-      <View style={{flexDirection: "row", alignItems: "center"}}>
-        <Text>已完成：</Text><Text h3>{qcTask?.epcCount || 0}</Text>
-      </View>
-    </View>
-    <View style={{flexDirection: "row"}}>
-      <View style={styles.side}>
-        <View style={{backgroundColor: "white"}}>
-          <View style={{flexDirection: "row", alignItems: "flex-start", marginBottom: 2, padding: 4}}>
-            <Text style={{width: 60}}>工种</Text>
-            <Text style={{marginLeft: 30}}>员工</Text>
-            <Text style={{marginLeft: 30}}>数量</Text>
-          </View>
-          {activeTaskInfo && activeTaskInfo.map((item: any, i: number) => (
-            <View key={item.workerId} style={{
-              flexDirection: "row",
-              marginBottom: 2,
-              justifyContent: "flex-start",
-              padding: 4,
-            }}>
-              <Text style={{width: 60}}>{QcWorkText[item.workType as QcWorkType]}</Text>
-              <Text style={{marginLeft: 30}}>{item.name}</Text>
-              <View style={{width: 70, marginLeft: 30, flexDirection: "row", alignItems: "center"}}>
-                <Text>{item && (item.qty || 0)}</Text>
-                <View style={{width: 60}}>
-                  {/*<LinearProgress value={0.8} color="primary" style={{height: 14, borderRadius: 6}}/>*/}
-                </View>
-              </View>
-            </View>
-          ))}
-
+  return (<KeyboardAvoidingView style={{flex: 1}} keyboardVerticalOffset={20}>
+    <View style={styles.container}>
+      <View style={styles.nav}>
+        <View style={{flexDirection: "row"}}>
+          <Text>开始时间：</Text>
+          <Text>{qcTask?.startTime}</Text>
         </View>
-        <View style={{width: 90, position: "absolute", bottom: 14, left: 8}}>
-          <Button title="替换人员"/>
-        </View>
-        <View style={{width: 90, position: "absolute", bottom: 14, right: 8}}>
-          <Button title="质检记录"/>
-        </View>
-      </View>
-      <View style={styles.content}>
-        <View style={styles.sense}>
-          {readEpcNode}
-          {/* {stopReadNode}*/}
-        </View>
-        <View style={styles.footer}>
-          <Input
-            containerStyle={{}}
-            inputContainerStyle={{}}
-            leftIcon={<FontAwesome name="feed" size={30}/>}
-            rightIcon={
-              <Button
-                icon={<FontAwesome name="close" color="white" size={20}/>}
-                color="red"
-                disabled={loading}
-                title="结束任务" onPress={() => setCompleteTaskVisible(true)}/>
-            }
-            placeholder="RFID感应或扫描EPC"
+        <View style={{width: 400}}>
+          <ButtonGroup
+            buttons={[
+              {element: () => <Text>良品</Text>},
+              {element: () => <Text>残次品</Text>},
+              {element: () => <Text>退供应商次品</Text>},
+              {element: () => <Text>可维修次品</Text>},
+            ]}
+            selectedIndex={Number(epcResultSelected)}
+            onPress={(v: number) => setEpcResultSelected(`${v}`)}
           />
         </View>
+        <View style={{flexDirection: "row", alignItems: "center"}}>
+          <Text>已完成：</Text><Text h3>{total || qcTask?.epcCount || 0}</Text>
+        </View>
       </View>
+      <View style={{flexDirection: "row"}}>
+        <View style={styles.side}>
+          <View style={{backgroundColor: "white"}}>
+            <View style={{flexDirection: "row", alignItems: "flex-start", marginBottom: 2, padding: 4}}>
+              <Text style={{width: 60}}>工种</Text>
+              <Text style={{marginLeft: 30}}>员工</Text>
+              <Text style={{marginLeft: 30}}>数量</Text>
+            </View>
+            {activeTaskInfo && activeTaskInfo.map((item: any, i: number) => (
+              <View key={item.workerId} style={{
+                flexDirection: "row",
+                marginBottom: 2,
+                justifyContent: "flex-start",
+                padding: 4,
+              }}>
+                <Text style={{width: 60}}>{QcWorkText[item.workType as QcWorkType]}</Text>
+                <Text style={{marginLeft: 30}}>{item.name}</Text>
+                <View style={{width: 70, marginLeft: 30, flexDirection: "row", alignItems: "center"}}>
+                  <Text>{item && (item.qty || 0)}</Text>
+                  <View style={{width: 60}}>
+                  </View>
+                </View>
+              </View>
+            ))}
+
+          </View>
+          <View style={styles.sideFooterButton}>
+            <Button
+              title="替换人员"
+              onPress={() => setQuickTaskVisible(true)}
+            />
+            <Button title="质检记录" onPress={() => navigation.navigate("QcRecord")}/>
+          </View>
+        </View>
+        <View style={styles.content}>
+          <View style={styles.sense}>
+            {readEpcNode}
+            {/* {stopReadNode}*/}
+          </View>
+          <View style={styles.footer}>
+            <Input
+              containerStyle={{}}
+              inputContainerStyle={{}}
+              leftIcon={<FontAwesome name="feed" size={30}/>}
+              rightIcon={
+                <Button
+                  icon={<FontAwesome name="close" color="white" size={20}/>}
+                  color="red"
+                  disabled={loading}
+                  title="结束任务" onPress={() => setCompleteTaskVisible(true)}/>
+              }
+              placeholder="RFID感应或扫描EPC"
+            />
+          </View>
+        </View>
+      </View>
+      <CompleteTask {...props} navigation={navigation}/>
+      {quickVisible && <CreateTask
+        {...props}
+        navigation={navigation}
+        title="替换人员"
+        params={{
+          taskId: qcTask?.taskId,
+          memberList: qcTask?.memberList,
+        }}
+      />}
     </View>
-    <CompleteTask/>
-  </View>)
+  </KeyboardAvoidingView>)
 }
 
 const styles = StyleSheet.create({
@@ -339,7 +374,7 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   senseImage: {
-    width: 350,
+    width: 400,
     height: 250,
     borderRadius: 6,
     backgroundColor: "white",
@@ -385,5 +420,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderRightWidth: 1,
     borderColor: "white",
+  },
+  sideFooterButton: {
+    width: "100%",
+    position: "absolute",
+    bottom: 14,
+    left: 0,
+    flexDirection: "row",
+    justifyContent: "space-evenly",
   },
 })

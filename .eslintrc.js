@@ -239,7 +239,7 @@ module.exports = {
     "array-bracket-newline": [1, "consistent"],
 
     "no-underscore-dangle": 0, // 标识符不能以_开头或结尾
-    "no-invalid-this": 1, // 禁止无效的this，只能用在构造器，类，对象字面量
+    "no-invalid-this": 0, // 禁止无效的this，只能用在构造器，类，对象字面量
     "no-spaced-func": 1, // 函数调用时 函数名与()之间不能有空格
     "no-use-before-define": [1, {
       variables: false,
@@ -252,7 +252,7 @@ module.exports = {
       submit: true,
       reset: true,
     }], // button按钮必须有type属性
-    "react/default-props-match-prop-types": [1, { allowRequiredDefaults: true }], // 防止组件上出现无关的 defaultProps
+    "react/default-props-match-prop-types": [0, { allowRequiredDefaults: true }], // 防止组件上出现无关的 defaultProps
     "react/destructuring-assignment": [0, "always"], //  规则强制在组件中一致使用解构赋值
     "react/forbid-component-props": [0, { forbid: ["className"] }], // 禁止组件上的某些值
     "react/forbid-foreign-prop-types": 1, // 解构

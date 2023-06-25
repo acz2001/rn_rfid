@@ -5,13 +5,15 @@ import {LoginErrorMessage, LoginParams} from "./types"
 import Icon from "react-native-vector-icons/MaterialCommunityIcons"
 import {useToast} from "react-native-toast-notifications"
 import {emsLogin} from "@/api/login"
-import {useNavigation} from "@react-navigation/native"
-import {removeStorageAuth, setStorageToken, setStorageUserInfo} from "@/utils"
+import {DrawerLockModeState, setStorageToken, setStorageUserInfo, UserInfoState} from "@/global"
 import {TOAST_DURATION} from "@/global/constants"
+import {ScreenNavigationProps} from "@/route"
+import {useRecoilState, useSetRecoilState} from "recoil"
 
-export function LoginForm(): ReactElement {
+export function LoginForm({navigation}: ScreenNavigationProps): ReactElement {
   const Toast = useToast()
-  const {navigate} = useNavigation()
+  const setUserInfo = useSetRecoilState(UserInfoState)
+  const setDrawerLockMode = useSetRecoilState(DrawerLockModeState)
   const [{username, password, rememberUser}, setFormData] = useState<LoginParams>({
     username: "13169363736",
     password: "363736",
@@ -44,6 +46,10 @@ export function LoginForm(): ReactElement {
     }
   }, [username, password])
 
+  useEffect(() => {
+    setDrawerLockMode("locked-closed")
+  }, [])
+
   const onLogin = async () => {
     setLoading(true)
     try {
@@ -55,10 +61,11 @@ export function LoginForm(): ReactElement {
         Toast.show("登录失败", {duration: TOAST_DURATION})
         return
       }
-      await setStorageUserInfo(data)
-      await setStorageToken(data.userToken)
+      setStorageUserInfo(JSON.stringify(data))
+      setStorageToken(data.userToken)
+      setUserInfo(data)
       Toast.show("登录成功", {duration: TOAST_DURATION})
-      navigate("Home" as never)
+      navigation.replace("Home")
     } catch (e) {
       Toast.show((e as Error).message)
     } finally {
@@ -122,17 +129,17 @@ export function LoginForm(): ReactElement {
               }))}
               placeholder="请输入密码"
             />
-            <View style={{alignItems: "flex-start"}}>
-              <CheckBox
-                center
-                title="记住账号"
-                checked={rememberUser as boolean}
-                onPress={() => setFormData((val: LoginParams): LoginParams => ({
-                  ...val,
-                  rememberUser: !rememberUser,
-                }))}
-              />
-            </View>
+            {/*<View style={{alignItems: "flex-start"}}>*/}
+            {/*  <CheckBox*/}
+            {/*    center*/}
+            {/*    title="记住账号"*/}
+            {/*    checked={rememberUser as boolean}*/}
+            {/*    onPress={() => setFormData((val: LoginParams): LoginParams => ({*/}
+            {/*      ...val,*/}
+            {/*      rememberUser: !rememberUser,*/}
+            {/*    }))}*/}
+            {/*  />*/}
+            {/*</View>*/}
             <Button
               type="solid"
               title="登录"

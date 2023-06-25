@@ -1,17 +1,16 @@
-import {BASE_API_URL, TIME_OUT, TOAST_DURATION} from "@/global/constants"
+import {BASE_API_URL, TIME_OUT} from "@/global/constants"
 import axios, {AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig} from "axios"
-import {APIResponse} from "@/global/types"
-import {storage} from "@/utils/storage"
+import {getStorageToken, APIResponse} from "@/global"
 
 export const instance: AxiosInstance = axios.create({
   baseURL: BASE_API_URL,
   timeout: TIME_OUT,
 })
 
-instance.interceptors.request.use(async function (config: InternalAxiosRequestConfig) {
-  const token: string = await storage.load({key: "token"})
+instance.interceptors.request.use(function (config: InternalAxiosRequestConfig) {
+  const token = getStorageToken()
   if (token) config.headers.Authorization = "Bearer " + token
-  console.log(`请求配置 === `, config)
+  console.log(`请求配置 === 求求求求求求求求求求求求求求`, config)
   return config
 }, function (error: AxiosError) {
   console.error(error)
@@ -19,7 +18,7 @@ instance.interceptors.request.use(async function (config: InternalAxiosRequestCo
 })
 
 instance.interceptors.response.use(function (response: AxiosResponse) {
-  console.log(`请求响应 === `, response.data)
+  console.log(`请求响应 === 应应应应应应应应应应应应应应`, response.data)
   return Promise.resolve(response)
 }, function (error: AxiosError) {
   console.error(error)
