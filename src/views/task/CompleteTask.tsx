@@ -29,8 +29,6 @@ export default function CompleteTask({navigation}: CompleteTaskProps): ReactElem
     }
     Toast.show("操作成功", {type: "success"})
     setVisible(false)
-    setQcTask(null)
-    navigation.replace("Home")
   }
 
   return (

@@ -8,7 +8,7 @@ import {emsLogin} from "@/api/login"
 import {DrawerLockModeState, setStorageToken, setStorageUserInfo, UserInfoState} from "@/global"
 import {TOAST_DURATION} from "@/global/constants"
 import {ScreenNavigationProps} from "@/route"
-import {useRecoilState, useSetRecoilState} from "recoil"
+import {useSetRecoilState} from "recoil"
 
 export function LoginForm({navigation}: ScreenNavigationProps): ReactElement {
   const Toast = useToast()

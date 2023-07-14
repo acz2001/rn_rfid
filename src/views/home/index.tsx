@@ -4,11 +4,11 @@ import {Menu} from "@/views/home/Menu"
 import {ScreenNavigationProps} from "@/route"
 import SignOutModal from "@/views/login/SignOutModal"
 
-export function Home(props: ScreenNavigationProps): ReactElement {
+export function Home({navigation, ...props}: ScreenNavigationProps): ReactElement {
 
   return (<ScrollView style={styles.container}>
-    <Menu {...props} />
-    <SignOutModal {...props} />
+    <Menu {...props} navigation={navigation}/>
+    <SignOutModal {...props} navigation={navigation}/>
   </ScrollView>)
 }
 

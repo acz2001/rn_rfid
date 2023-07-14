@@ -3,7 +3,7 @@ import RModal from "@/components/RModal"
 import {useRecoilState, useSetRecoilState} from "recoil"
 import {
   DeviceConnectState,
-  DeviceReadState,
+  DeviceReadState, QcTaskInfo,
   SignOutModalVisibleState,
   UserInfoState,
 } from "@/global/state"
@@ -20,6 +20,7 @@ export default function SignOutModal({navigation}: ScreenNavigationProps): React
   const [isRead, setRead] = useRecoilState(DeviceReadState)
   const [loading, setLoading] = useState<boolean>(false)
   const setUserInfo = useSetRecoilState(UserInfoState)
+  const [qcTask, setQcTask] = useRecoilState(QcTaskInfo)
 
   const handleConfirm = () => {
     setLoading(true)
@@ -36,6 +37,7 @@ export default function SignOutModal({navigation}: ScreenNavigationProps): React
           setOpen(off)
         }, (err: any): void => console.error(err))
       }
+      setQcTask(null)
       setUserInfo(null)
       deleteStorageUser()
       setVisible(false)

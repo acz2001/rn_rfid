@@ -26,14 +26,6 @@ export function getQcTaskInfo(params: any) {
   })
 }
 
-export function getMemberQty(params: any) {
-  return request({
-    url: "qc/task/memberQty",
-    method: Methods.GET,
-    params,
-  })
-}
-
 export function joinQcTask(data: any) {
   return request({
     url: "qc/task/joinTask",

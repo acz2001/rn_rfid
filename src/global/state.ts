@@ -46,3 +46,8 @@ export const DrawerLockModeState = atom<"unlocked" | "locked-closed" | "locked-o
   key: "DrawerLockModeState",
   default: undefined,
 })
+
+export const SocketState = atom<boolean>({
+  key: "SocketState",
+  default: false,
+})

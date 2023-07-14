@@ -1,13 +1,13 @@
-import React, {ReactElement, useEffect, useLayoutEffect, useState} from "react"
+import React, {ReactElement, useEffect, useState} from "react"
 import {View, StyleSheet, Image, NativeEventEmitter, NativeModules, KeyboardAvoidingView} from "react-native"
-import {Button, ButtonGroup, Input, LinearProgress, Skeleton, Text} from "@rneui/base"
+import {Button, ButtonGroup, Input, Skeleton, Text} from "@rneui/base"
 import FontAwesome from "react-native-vector-icons/FontAwesome"
 import {useRecoilState, useSetRecoilState} from "recoil"
 import {DeviceConnectState, DeviceReadState, QcTaskInfo} from "@/global/state"
 import {useToast} from "react-native-toast-notifications"
 import {TOAST_DURATION} from "@/global/constants"
-import {getStorageDeviceBind, getStorageUserInfo} from "@/global"
-import {getMemberQty, getQcTaskInfo, recordEpc} from "@/api/task/task"
+import {getStorageDeviceBind, getStorageToken, getStorageUserInfo} from "@/global"
+import {recordEpc} from "@/api/task/task"
 import {QcWorkText, QcWorkType} from "@/views/task/types"
 import CompleteTask from "@/views/task/CompleteTask"
 import {
@@ -25,21 +25,14 @@ export function Qc({navigation, ...props}: ScreenNavigationProps): ReactElement 
 
   const Toast = useToast()
   const [loading, setLoading] = useState<boolean>(false)
-  const [qcTask, setQcTask] = useRecoilState(QcTaskInfo)
-  const [open] = useRecoilState(DeviceConnectState)
+  const [qcTask] = useRecoilState(QcTaskInfo)
+  const [open, setOpen] = useRecoilState(DeviceConnectState)
   const setRead = useSetRecoilState(DeviceReadState)
-  const [activeTaskInfo, setActiveTaskInfo] = useState<Array<any>>([])
   const [epcInfo, setEpcInfo] = useState<any>()
-  const [total, setTotal] = useState<number>(qcTask?.epcCount)
 
   const setCompleteTaskVisible = useSetRecoilState(CompleteTaskModalVisibleState)
   const [quickVisible, setQuickTaskVisible] = useRecoilState(CreateTaskModalVisibleState)
   const [epcResultSelected, setEpcResultSelected] = useState<string>("0")
-
-  const getTaskQty = async () => {
-    const {success, data} = await getMemberQty({taskId: qcTask?.taskId})
-    if (success) setActiveTaskInfo(data)
-  }
 
   const getData = async ({epc}: any) => {
     setLoading(true)
@@ -59,16 +52,6 @@ export function Qc({navigation, ...props}: ScreenNavigationProps): ReactElement 
         setLoading(false)
         return
       }
-      Promise.all([
-        getQcTaskInfo({taskId: qcTask?.taskId}),
-        getMemberQty({taskId: qcTask?.taskId}),
-      ])
-        .then(([{data: task}, {data: member}]) => {
-          setQcTask(task)
-          setActiveTaskInfo(member)
-          setLoading(false)
-        })
-      setTotal((val: number) => (val += 1))
       setEpcInfo(epc)
     } catch (e) {
       console.error(e)
@@ -79,16 +62,12 @@ export function Qc({navigation, ...props}: ScreenNavigationProps): ReactElement 
 
   const {run} = useDebounceFn(getData, {wait: 500})
 
-  useLayoutEffect(() => {
-    getTaskQty()
-  }, [])
-
   useEffect(() => {
     if (open) {
       RFIDApplication.startRead((msg: any): void => {
         setRead(true)
       }, (err: any): void => {
-        console.error(`startRead:error ===`, err)
+        console.error(`盘点功能启动异常 ===`, err)
       })
     }
     const eventEmitter: NativeEventEmitter = new NativeEventEmitter(RFIDApplication)
@@ -97,6 +76,13 @@ export function Qc({navigation, ...props}: ScreenNavigationProps): ReactElement 
       eventEmitter.removeAllListeners("tagReadData")
     }
   }, [open])
+
+
+  useEffect(() => {
+    if (qcTask?.taskState === "COMPLETED") {
+      RFIDApplication.stopRead((read: boolean): void => setRead(read), (err: any): void => console.error(err))
+    }
+  }, [qcTask?.taskState])
 
   const readEpcNode: ReactElement = (
     <>
@@ -228,7 +214,7 @@ export function Qc({navigation, ...props}: ScreenNavigationProps): ReactElement 
           />
         </View>
         <View style={{flexDirection: "row", alignItems: "center"}}>
-          <Text>已完成：</Text><Text h3>{total || qcTask?.epcCount || 0}</Text>
+          <Text>已完成：</Text><Text h3>{qcTask?.epcCount || 0}</Text>
         </View>
       </View>
       <View style={{flexDirection: "row"}}>
@@ -239,7 +225,7 @@ export function Qc({navigation, ...props}: ScreenNavigationProps): ReactElement 
               <Text style={{marginLeft: 30}}>员工</Text>
               <Text style={{marginLeft: 30}}>数量</Text>
             </View>
-            {activeTaskInfo && activeTaskInfo.map((item: any, i: number) => (
+            {qcTask && qcTask.memberList.map((item: any, i: number) => (
               <View key={item.workerId} style={{
                 flexDirection: "row",
                 marginBottom: 2,
@@ -249,7 +235,7 @@ export function Qc({navigation, ...props}: ScreenNavigationProps): ReactElement 
                 <Text style={{width: 60}}>{QcWorkText[item.workType as QcWorkType]}</Text>
                 <Text style={{marginLeft: 30}}>{item.name}</Text>
                 <View style={{width: 70, marginLeft: 30, flexDirection: "row", alignItems: "center"}}>
-                  <Text>{item && (item.qty || 0)}</Text>
+                  <Text>{item && (item.qcQty || 0)}</Text>
                   <View style={{width: 60}}>
                   </View>
                 </View>
@@ -268,7 +254,7 @@ export function Qc({navigation, ...props}: ScreenNavigationProps): ReactElement 
         <View style={styles.content}>
           <View style={styles.sense}>
             {readEpcNode}
-            {/* {stopReadNode}*/}
+            {/*{stopReadNode}*/}
           </View>
           <View style={styles.footer}>
             <Input
@@ -279,7 +265,7 @@ export function Qc({navigation, ...props}: ScreenNavigationProps): ReactElement 
                 <Button
                   icon={<FontAwesome name="close" color="white" size={20}/>}
                   color="red"
-                  disabled={loading}
+                  disabled={loading || qcTask?.taskState === "COMPLETED"}
                   title="结束任务" onPress={() => setCompleteTaskVisible(true)}/>
               }
               placeholder="RFID感应或扫描EPC"

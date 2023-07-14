@@ -24,6 +24,7 @@ export const getStorageUserInfo = (): UserInfo | null => JSON.parse(storage.getS
 
 export const getStorageDeviceBind = () => JSON.parse(storage.getString(StorageKeys.deviceBind) || StorageEmptyDefaultParse)
 
+
 export const deleteStorage = (key: string) => storage.delete(key)
 
 export const deleteStorageUser = () => {

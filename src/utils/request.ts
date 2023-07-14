@@ -10,7 +10,7 @@ export const instance: AxiosInstance = axios.create({
 instance.interceptors.request.use(function (config: InternalAxiosRequestConfig) {
   const token = getStorageToken()
   if (token) config.headers.Authorization = "Bearer " + token
-  console.log(`请求配置 === 求求求求求求求求求求求求求求`, config)
+  console.log(`请求配置 === `, config)
   return config
 }, function (error: AxiosError) {
   console.error(error)
@@ -18,7 +18,7 @@ instance.interceptors.request.use(function (config: InternalAxiosRequestConfig) 
 })
 
 instance.interceptors.response.use(function (response: AxiosResponse) {
-  console.log(`请求响应 === 应应应应应应应应应应应应应应`, response.data)
+  console.log(`请求响应 === `, response.data)
   return Promise.resolve(response)
 }, function (error: AxiosError) {
   console.error(error)

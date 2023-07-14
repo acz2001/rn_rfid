@@ -1,49 +1,41 @@
-import React, {forwardRef, ReactElement, useEffect, useState} from "react"
+import React, {ReactElement, useEffect, useState} from "react"
 import {KeyboardAvoidingView, ScrollView, StyleSheet, View} from "react-native"
 import {Button, ButtonGroup, Input, Text} from "@rneui/base"
 import {useToast} from "react-native-toast-notifications"
-import {cancelQcTack, getActiveTask, joinQcTask, runningQcTask} from "@/api/task/task"
-import {useNavigation} from "@react-navigation/native"
+import {cancelQcTack, getQcTaskInfo, joinQcTask, runningQcTask} from "@/api/task/task"
 import {useRecoilState, useSetRecoilState} from "recoil"
-import {DeviceConnectState, QcTaskInfo, WorkbenchBindInfo} from "@/global/state"
+import {DeviceConnectState, QcTaskInfo, SocketState} from "@/global/state"
 import {TaskStatus, TaskStatusText} from "@/views/task/types"
 import workType from "@/wokeType.json"
 import {TOAST_DURATION} from "@/global/constants"
-import {getStorageDeviceBind} from "@/global"
+import {getStorageDeviceBind, getStorageToken} from "@/global"
 import {CancelTaskModalVisibleState} from "@/views/task/state"
 import CancelTask from "@/views/task/CancelTask"
 import {ScreenNavigationProps} from "@/route"
 
 
-export function QcTask(props: ScreenNavigationProps): ReactElement {
+export function QcTask({navigation, ...props}: ScreenNavigationProps): ReactElement {
 
   const Toast = useToast()
-  const {navigate, goBack} = useNavigation()
   const [qcTask, setQcTask] = useRecoilState(QcTaskInfo)
-  const [open, setOpen] = useRecoilState(DeviceConnectState)
+  const [open] = useRecoilState(DeviceConnectState)
   const setVisible = useSetRecoilState(CancelTaskModalVisibleState)
   const [joinLoading, setJoinLoading] = useState<boolean>(false)
 
   const [workNumber, setWorkNumber] = useState<string>()
 
-  const [bindInfo] = useRecoilState(WorkbenchBindInfo)
-
   const [groupSelectedIndex, setGroupSelectedIndex] = useState<number>()
   const [groupSelectedItem, setGroupSelectedItem] = useState<any>()
 
-  const getTaskDetail = async () => {
-    const {workbenchId} = bindInfo || {}
-    const {success, data} = await getActiveTask({workbenchId})
-    if (!success) return
-    setQcTask(data)
-  }
+  const [socketConnect, setSocketConnect] = useRecoilState(SocketState)
 
   useEffect(() => {
     const info = getStorageDeviceBind()
-    if (info) {
-      getTaskDetail()
-    } else {
+    if (!info) {
       Toast.show("设备未绑定工作台", {duration: TOAST_DURATION})
+    }
+    return () => {
+      setWorkNumber(undefined)
     }
   }, [])
 
@@ -72,13 +64,15 @@ export function QcTask(props: ScreenNavigationProps): ReactElement {
         Toast.show(errorMessage || "加入失败", {duration: TOAST_DURATION})
         return
       }
-      getTaskDetail()
+      if (!socketConnect) {
+        const {success: taskSuccess, data: task} = await getQcTaskInfo({taskId: qcTask?.taskId})
+        if (taskSuccess) setQcTask(task)
+      }
     } catch (e) {
       console.error(e)
     } finally {
       setJoinLoading(false)
     }
-
   }
 
   const handleCancel = async () => {
@@ -90,8 +84,7 @@ export function QcTask(props: ScreenNavigationProps): ReactElement {
         return
       }
       Toast.show("操作成功", {duration: TOAST_DURATION})
-      setQcTask(null)
-      goBack()
+      setVisible(false)
     } catch (e) {
       console.error(e)
     } finally {
@@ -180,8 +173,7 @@ export function QcTask(props: ScreenNavigationProps): ReactElement {
                   Toast.show(errorMessage || "开始任务出错", {duration: TOAST_DURATION})
                   return
                 }
-                await getTaskDetail()
-                navigate("Qc" as never)
+                navigation.replace("Qc")
               } catch (e) {
                 console.error(e)
               } finally {
@@ -190,7 +182,7 @@ export function QcTask(props: ScreenNavigationProps): ReactElement {
             }}
           />
         </View>
-        <CancelTask {...props} handleConfirm={handleCancel}/>
+        <CancelTask {...props} navigation={navigation} handleConfirm={handleCancel}/>
       </View>
     </KeyboardAvoidingView>
   )

@@ -1,9 +1,7 @@
-import React, {forwardRef, ReactElement, ReactNode, useEffect, useRef, useState} from "react"
-import {Button, ButtonGroup, ButtonGroupProps, Card, Input, Text} from "@rneui/base"
-import {BackHandler, Keyboard, ScrollView, StyleSheet, View} from "react-native"
-import Dropdown from "react-native-modal-dropdown"
-import {getStorageUserInfo} from "@/global"
-import {Workbench} from "@/views/home/types"
+import React, {ReactElement, ReactNode, useEffect, useRef, useState} from "react"
+import {Button, ButtonGroup, Card, Input, Text} from "@rneui/base"
+import {Keyboard, StyleSheet, View} from "react-native"
+import {getStorageDeviceBind, getStorageUserInfo} from "@/global"
 import workType from "@/wokeType.json"
 import FontAwesome from "react-native-vector-icons/FontAwesome"
 import {TOAST_DURATION} from "@/global/constants"
@@ -41,7 +39,6 @@ export default function CreateTask(
 
   const [memberList, setMemberList] = useState<any>([])
 
-  const [bindInfo] = useRecoilState(WorkbenchBindInfo)
   const [qcTask, setQcTask] = useRecoilState(QcTaskInfo)
 
   const [groupSelectedIndex, setGroupSelectedIndex] = useState<number>()
@@ -97,8 +94,8 @@ export default function CreateTask(
     setSubmitLoading(true)
     try {
       const {success, data, errorMessage} = await createTasks({
-        workbenchId: bindInfo?.workbenchId,
-        workbenchName: bindInfo?.name,
+        workbenchId: getStorageDeviceBind()?.workbenchId,
+        workbenchName: getStorageDeviceBind()?.name,
         memberList,
       })
       if (!success) {
@@ -120,8 +117,8 @@ export default function CreateTask(
     setSubmitLoading(true)
     try {
       const {success, errorMessage, data} = await quickCreateTask({
-        workbenchId: bindInfo?.workbenchId,
-        workbenchName: bindInfo?.name,
+        workbenchId: getStorageDeviceBind()?.workbenchId,
+        workbenchName: getStorageDeviceBind()?.name,
         memberList,
         taskId: qcTask?.taskId,
       })
@@ -130,8 +127,8 @@ export default function CreateTask(
         return
       }
       toastRef.current?.toastMessage("操作成功", {duration: TOAST_DURATION})
-      setQcTask(data)
       setVisible(false)
+      navigation.replace("Home")
       navigation.replace("QcTask")
     } catch (e) {
       console.error(e)

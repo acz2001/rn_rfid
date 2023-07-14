@@ -14,6 +14,7 @@ import {EpcResult, EpcResultText} from "@/views/task/types"
 import {useToast} from "react-native-toast-notifications"
 import {getCurrentTaskRecord} from "@/api/task/task"
 import {TOAST_DURATION} from "@/global/constants"
+
 const Item = ({item, onPress, style}: any) => (
   <TouchableOpacity onPress={onPress} style={[styles.item, style]}>
     <View style={{flexDirection: "row"}}>
@@ -94,9 +95,6 @@ export default function QcRecord(): ReactElement {
   const [loading, setLoading] = useState<boolean>(true)
   const [listData, setListData] = useState([])
 
-  const [workerSelectedIndex, setWorkerSelectedIndex] = useState<any>()
-  const [workerSelectedItem, setWorkerSelectedItem] = useState<any>()
-
   const getData = async () => {
     try {
       const {success, errorMessage, data} = await getCurrentTaskRecord({
@@ -128,38 +126,6 @@ export default function QcRecord(): ReactElement {
 
   return (
     <View style={styles.container}>
-      {/*<View style={styles.searchBar}>*/}
-      {/*  <View style={{width: "50%"}}>*/}
-      {/*    <ScrollView horizontal>*/}
-      {/*      <ButtonGroup*/}
-      {/*        buttons={qcTask?.memberList.map((item: any) => ({*/}
-      {/*          element: () => <Text style={{padding: 8}}>{item.name}</Text>,*/}
-      {/*        }))}*/}
-      {/*        selectedIndex={workerSelectedIndex}*/}
-      {/*        onPress={(v: number) => {*/}
-      {/*          setWorkerSelectedIndex(v)*/}
-      {/*        }}*/}
-      {/*      />*/}
-      {/*    </ScrollView>*/}
-      {/*  </View>*/}
-      {/*  <View style={{width: "44%", margin: 2, flexDirection: "row", alignItems: "center"}}>*/}
-      {/*    <Text>工种：</Text>*/}
-      {/*    <ScrollView horizontal>*/}
-      {/*      <ButtonGroup*/}
-      {/*        buttons={workType.map((item: any) => ({*/}
-      {/*          element: () => <Text style={{padding: 8}}>{item.name}</Text>,*/}
-      {/*        }))}*/}
-      {/*        selectedIndex={workerSelectedIndex}*/}
-      {/*        onPress={(v: number) => {*/}
-      {/*          setWorkerSelectedIndex(v)*/}
-      {/*        }}*/}
-      {/*      />*/}
-      {/*    </ScrollView>*/}
-      {/*  </View>*/}
-      {/*  <View style={{width: "44%", backgroundColor: "red", margin: 2}}>*/}
-      {/*    <Text>3333</Text>*/}
-      {/*  </View>*/}
-      {/*</View>*/}
       <ItemTitle/>
       <SafeAreaView>
         {isEffect ?
@@ -183,7 +149,7 @@ const styles = StyleSheet.create({
   },
   itemTitle: {
     padding: 10,
-    // marginVertical: 4,
+    marginVertical: 4,
     flexDirection: "row",
     justifyContent: "flex-start",
   },
@@ -198,10 +164,5 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
     fontSize: 16,
     color: "#000",
-  },
-  searchBar: {
-    // flex: 1,
-    flexDirection: "row",
-    flexWrap: "wrap",
   },
 })

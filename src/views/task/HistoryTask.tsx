@@ -6,7 +6,6 @@ import {TaskStatus, TaskStatusText} from "@/views/task"
 import FontAwesome from "react-native-vector-icons/FontAwesome"
 import {useRecoilState, useSetRecoilState} from "recoil"
 import {WorkbenchBindInfo} from "@/global"
-import {useRafState} from "ahooks"
 import {QueryHistoryTaskItem} from "@/views/task/state"
 import {ScreenNavigationProps} from "@/route"
 

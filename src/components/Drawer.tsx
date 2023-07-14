@@ -1,7 +1,6 @@
 import {
   DrawerLayoutAndroid,
   DrawerLayoutAndroidProps,
-  StyleSheet,
   TouchableHighlight,
   View,
 } from "react-native"
@@ -18,26 +17,23 @@ export interface DrawerLayoutFnProps extends Omit<DrawerLayoutAndroidProps, "ren
 export type DrawerRefReturnObject = {
   openDrawer: () => void;
   closeDrawer: () => void;
-  setDrawerWidth: (v: number) => void;
-  setDrawerPosition: (v: "left" | "right") => void;
 }
 
 export const DrawerFn: React.RefObject<DrawerRefReturnObject> = createRef()
 
-export default function Drawer(
+const Drawer: React.FunctionComponent<DrawerLayoutFnProps> = function (
   {
     children,
     ...props
-  }: DrawerLayoutFnProps,
-): ReactElement {
-
+  },
+) {
   const setSignOutModalVisible = useSetRecoilState(SignOutModalVisibleState)
   const drawerRef = useRef<DrawerLayoutAndroid | null>(null)
   const {navigate} = useNavigation()
   const [drawerWidth, setWidth] = useState<number>(300)
   const [drawerPosition, setPosition] = useState<"left" | "right">("right")
   const [drawerLockMode] = useRecoilState(DrawerLockModeState)
-  const [userInfo, setUserInfo] = useRecoilState(UserInfoState)
+  const [userInfo] = useRecoilState(UserInfoState)
 
   const openDrawer = () => {
     drawerRef?.current?.openDrawer()
@@ -47,14 +43,10 @@ export default function Drawer(
     drawerRef?.current?.closeDrawer()
   }
 
-  const setDrawerWidth = (value: number) => setWidth(value)
-  const setDrawerPosition = (value: "left" | "right") => setPosition(value)
 
   useImperativeHandle(DrawerFn, (): DrawerRefReturnObject => ({
     openDrawer,
     closeDrawer,
-    setDrawerWidth,
-    setDrawerPosition,
   }), [])
 
   const navigationView = (): ReactElement => {
@@ -112,27 +104,4 @@ export default function Drawer(
   </DrawerLayoutAndroid>)
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingTop: 50,
-    backgroundColor: "#ecf0f1",
-    padding: 8,
-  },
-  navigationContainer: {
-    flex: 1,
-    paddingTop: 50,
-    backgroundColor: "#fff",
-    padding: 8,
-  },
-  settingItem: {
-    padding: 10,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    borderBottomWidth: 1,
-    borderStyle: "solid",
-    borderBottomColor: "#ccc",
-  },
-})
+export default Drawer

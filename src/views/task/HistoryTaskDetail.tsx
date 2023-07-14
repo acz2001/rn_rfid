@@ -1,9 +1,9 @@
 import React, {ReactElement, useEffect, useState} from "react"
 import {QueryHistoryTaskItem} from "@/views/task/state"
 import {useRecoilState} from "recoil"
-import {getMemberQty, getQcTaskInfo} from "@/api/task/task"
-import {ActivityIndicator, ScrollView, TouchableHighlight, View} from "react-native"
-import {Avatar, ListItem, Text} from "@rneui/base"
+import {getQcTaskInfo} from "@/api/task/task"
+import {ActivityIndicator, ScrollView, View} from "react-native"
+import {ListItem, Text} from "@rneui/base"
 import {QcWorkText, QcWorkType, TaskStatus, TaskStatusText} from "@/views/task/types"
 
 
@@ -18,14 +18,12 @@ export default function HistoryTaskDetail(): ReactElement {
   const [item] = useRecoilState(QueryHistoryTaskItem)
   const [isEffect, setIsEffect] = useState<boolean>(true)
   const [taskInfo, setTaskInfo] = useState<any>()
-  const [taskQty, setTaskQty] = useState<any>()
 
   const getData = async () => {
     try {
       const {taskId} = item || {}
-      const [{data: info}, {data: qtyList}] = await Promise.all([getQcTaskInfo({taskId}), getMemberQty({taskId})])
+      const {data: info} = await getQcTaskInfo({taskId, calculateQty: true})
       setTaskInfo(info)
-      setTaskQty(qtyList)
     } catch (e) {
       console.error(e)
     } finally {
@@ -52,13 +50,13 @@ export default function HistoryTaskDetail(): ReactElement {
       </View>
       <View style={{width: "50%"}}>
         <ScrollView style={{flex: 1}}>
-          {taskQty && taskQty.map((item: any) => (
+          {taskInfo && taskInfo.memberList.map((item: any) => (
             <ListItem
               key={item.workerId}
               bottomDivider>
               <ListItem.Content>
                 <ListItem.Title>{item.name}({QcWorkText[item.workType as QcWorkType]})</ListItem.Title>
-                <ListItem.Subtitle>完成数量：{item.qty}</ListItem.Subtitle>
+                <ListItem.Subtitle>完成数量：{item?.qcQty}</ListItem.Subtitle>
               </ListItem.Content>
             </ListItem>
           ))}

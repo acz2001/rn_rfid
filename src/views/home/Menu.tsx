@@ -2,20 +2,25 @@ import React, {useEffect, useState} from "react"
 import {TouchableOpacity, View} from "react-native"
 import {StyleSheet} from "react-native"
 import FontAwesome from "react-native-vector-icons/FontAwesome"
-import {Button, Text} from "@rneui/base"
+import {Text} from "@rneui/base"
 import CreateTask from "@/views/task/CreateTask"
 import {QcTask} from "@/views/task/QcTask"
 import {getActiveTask} from "@/api/task/task"
 import {TOAST_DURATION} from "@/global/constants"
 import {useRecoilState, useSetRecoilState} from "recoil"
-import {DeviceConnectState, DrawerLockModeState, QcTaskInfo, WorkbenchBindInfo} from "@/global/state"
+import {
+  DeviceConnectState,
+  DrawerLockModeState,
+  QcTaskInfo,
+  UserInfoState,
+  WorkbenchBindInfo,
+} from "@/global/state"
 import WorkbenchBindModal from "@/views/home/WorkbenchBindModal"
 import {getBindWorkbench} from "@/api/task/workbench"
 import {useToast} from "react-native-toast-notifications"
 import {ScreenNavigationProps} from "@/route"
 import {CreateTaskModalVisibleState} from "@/views/task/state"
-import {getStorageDeviceBind, getStorageToken} from "@/global"
-import ReconnectingWebSocket from "reconnecting-websocket"
+import {getStorageDeviceBind} from "@/global"
 
 
 export function Menu({navigation, ...props}: ScreenNavigationProps): React.ReactElement {
@@ -29,11 +34,10 @@ export function Menu({navigation, ...props}: ScreenNavigationProps): React.React
   const setDrawerLockMode = useSetRecoilState(DrawerLockModeState)
 
   const [workbenchVisible, setWorkbenchVisible] = useState(false)
-  const [workbenchName, setWorkbenchName] = useState<string>("")
 
   const getTaskDetail = ({deviceId, workbenchId}: any) => {
     try {
-      Promise.all([getActiveTask({workbenchId}), getBindWorkbench({deviceId})])
+      Promise.all([getActiveTask({workbenchId, calculateQty: true}), getBindWorkbench({deviceId})])
         .then(([{data: task}, {data: info}]) => {
           setQcTask(task)
           setBindInfo(info)
@@ -53,28 +57,6 @@ export function Menu({navigation, ...props}: ScreenNavigationProps): React.React
       Toast?.show("设备未绑定工作台", {duration: TOAST_DURATION})
     }
     setDrawerLockMode("unlocked")
-
-    // const ws = new WebSocket("ws://192.168.1.220:8080/ws/topic?topic=testTaskId")
-    //
-    // ws.onopen = () => {
-    //   console.log("WebSocket connected")
-    // }
-    //
-    // ws.onmessage = (e) => {
-    //   // a message was received
-    //   console.log(e.data)
-    // }
-    //
-    // ws.onerror = (e) => {
-    //   // an error occurred
-    //   console.log(e.message)
-    // }
-    //
-    // ws.onclose = (e) => {
-    //   // connection closed
-    //   console.log(e.code, e.reason)
-    // }
-
   }, [])
 
   const toggleDialog = () => {
@@ -110,7 +92,7 @@ export function Menu({navigation, ...props}: ScreenNavigationProps): React.React
       </Text>
     </TouchableOpacity>
 
-    {qcTask && <TouchableOpacity
+    {(qcTask && (qcTask.taskState === "RUNNING" || qcTask.taskState === "NEW")) && <TouchableOpacity
       style={styles.menuItem}
       activeOpacity={0.8}
       onPress={currentQcTask}>
@@ -122,7 +104,7 @@ export function Menu({navigation, ...props}: ScreenNavigationProps): React.React
       </Text>
     </TouchableOpacity>}
 
-    {!qcTask && <TouchableOpacity
+    {!(qcTask && (qcTask.taskState === "RUNNING" || qcTask.taskState === "NEW")) && <TouchableOpacity
       style={styles.menuItem}
       activeOpacity={0.8}
       onPress={toggleDialog}>
