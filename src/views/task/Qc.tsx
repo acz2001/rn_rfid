@@ -278,10 +278,10 @@ export function Qc({navigation, ...props}: ScreenNavigationProps): ReactElement 
         {...props}
         navigation={navigation}
         title="替换人员"
-        params={{
+        params={qcTask ? {
           taskId: qcTask?.taskId,
           memberList: qcTask?.memberList,
-        }}
+        } : null}
       />}
     </View>
   </KeyboardAvoidingView>)

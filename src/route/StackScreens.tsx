@@ -29,6 +29,7 @@ export function StackScreens(): React.ReactElement {
     let rws: any
     if (isInTask() && !socket) {
       const token = getStorageToken()
+      console.log(`token====`, token)
       rws = new ReconnectingWebSocket(`${WS_BASE_URL}/ws/topic?topic=${qcTask?.taskId}&Authorization=${encodeURIComponent(`Bearer ${token}`)}`)
       setSocket(rws)
       rws.onopen = (e: any) => {
@@ -52,6 +53,7 @@ export function StackScreens(): React.ReactElement {
           try {
             rws.close()
             setSocket(null)
+            setQcTask(null)
           } catch (e) {
             console.error(e)
           }
